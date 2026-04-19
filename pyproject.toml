@@ -36,6 +36,13 @@ dependencies = [
     "numpy>=1.24.4",
 ]
 
+[project.optional-dependencies]
+viz = [
+    "seaborn",
+    "matplotlib",
+    "rich",
+    "pydot",
+]
 
 [project.urls]
 Homepage = "https://olivierjuan.github.io/gyozas/"
@@ -108,12 +115,6 @@ docs = [
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.5,<10",
     "mkdocstrings[python]>=0.25",
-]
-viz = [
-    "seaborn",
-    "matplotlib",
-    "rich",
-    "pydot",
 ]
 dev = [
     "pre-commit>=4.5.1",
