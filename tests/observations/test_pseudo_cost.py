@@ -341,9 +341,9 @@ class TestHistoryAccumulation:
                 pytest.skip("Instance solved after one branch")
 
             obs.extract(ctx.model, done=False)  # child: should update pseudocosts
-            assert (
-                len(obs._pseudo_down) > 0 or len(obs._pseudo_up) > 0
-            ), "At least one pseudocost direction should be updated after a branching"
+            assert len(obs._pseudo_down) > 0 or len(obs._pseudo_up) > 0, (
+                "At least one pseudocost direction should be updated after a branching"
+            )
 
     def test_scores_can_differ_after_history(self):
         """After branchings, candidates may get different scores (history breaks symmetry)."""

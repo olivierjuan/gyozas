@@ -74,9 +74,7 @@ class PrimalSearchOracle(Heur):
                 result = SCIP_RESULT.DIDNOTFIND
 
             trials += 1
-            if (
-                self.trials_per_node != -1 and trials >= self.trials_per_node
-            ) or self.scip.isStopped():  # ty: ignore[unresolved-attribute]
+            if (self.trials_per_node != -1 and trials >= self.trials_per_node) or self.scip.isStopped():  # ty: ignore[unresolved-attribute]
                 return result
 
     def _probe(self, idx_to_var: dict, var_indices: NDArray[np.int64], vals: NDArray[np.float64]) -> bool:
