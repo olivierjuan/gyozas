@@ -1,0 +1,125 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gyozas"
+dynamic = ["version"]
+description = "Modern Python library for reinforcement learning for combinatorial optimization."
+authors = [
+  { name="Olivier JUAN", email="olivier.juan@edf.fr" },
+  { name="Paul STRANG", email="paul.strang@edf.fr" }
+]
+maintainers = [
+  { name="Olivier JUAN", email="olivier.juan@edf.fr" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = ["optimization", "branch-and-bound", "scip", "pyscipopt", "combinatorial optimization", "gym", "gymnasium", "reinforcement learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+dependencies = [
+    "pyscipopt",
+    "gymnasium",
+    "networkx",
+    "numpy>=1.24.4",
+]
+
+
+[project.urls]
+Homepage = "https://olivierjuan.github.io/gyozas/"
+Documentation = "https://olivierjuan.github.io/gyozas/"
+Repository = "https://github.com/olivierjuan/gyozas"
+Issues = "https://github.com/olivierjuan/gyozas/issues"
+Changelog = "https://github.com/olivierjuan/gyozas/releases"
+
+[tool.setuptools.packages.find]
+include = ["gyozas", "gyozas.*"]
+namespaces = false
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.coverage.run]
+branch = true
+source = ["gyozas"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "SIM108", # ternary operator
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["gyozas"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert statements are fine in tests
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[dependency-groups]
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-xdist>=3.0",
+    "coverage[toml]>=7.0",
+    "ruff>=0.9",
+    "ty>=0.0.1",
+]
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.5,<10",
+    "mkdocstrings[python]>=0.25",
+]
+viz = [
+    "seaborn",
+    "matplotlib",
+    "rich",
+    "pydot",
+]
+dev = [
+    "pre-commit>=4.5.1",
+]
+
+[tool.uv]
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true

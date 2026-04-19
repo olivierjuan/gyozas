@@ -1,0 +1,95 @@
+stages:
+  - lint
+  - test
+  - build
+  - publish
+  - docs
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+
+cache:
+  paths:
+    - .pip-cache/
+
+lint:
+  stage: lint
+  image: nexus.retd.edf.fr:5012/python:3.12
+  before_script:
+    - pip install --upgrade pip
+    - pip install ruff ty
+    - pip install .[test,viz]
+  script:
+    - ruff check gyozas
+    - ruff format --check gyozas
+    - ty check gyozas
+
+.test-template: &test-template
+  stage: test
+  before_script:
+    - pip install --upgrade pip
+    - pip install .[test,viz]
+  script:
+    - coverage run -m pytest --tb=short -q
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    when: always
+
+test-3.10:
+  <<: *test-template
+  image: nexus.retd.edf.fr:5012/python:3.10
+
+test-3.11:
+  <<: *test-template
+  image: nexus.retd.edf.fr:5012/python:3.11
+
+test-3.12:
+  <<: *test-template
+  image: nexus.retd.edf.fr:5012/python:3.12
+  coverage: '/TOTAL.*\s(\d+)%/'
+
+build:
+  stage: build
+  image: nexus.retd.edf.fr:5012/python:3.12
+  before_script:
+    - pip install --upgrade pip
+    - pip install build
+  script:
+    - python -m build
+  artifacts:
+    paths:
+      - dist/
+
+publish:
+  stage: publish
+  image: nexus.retd.edf.fr:5012/python:3.12
+  before_script:
+    - pip install --upgrade pip
+    - pip install twine
+  script:
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token TWINE_CERT=/etc/ssl/certs/ca-certificates.crt
+      twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi
+      dist/*
+  dependencies:
+    - build
+  only:
+    - tags
+
+pages:
+  stage: docs
+  image: nexus.retd.edf.fr:5012/python:3.12
+  before_script:
+    - pip install --upgrade pip
+    - pip install -e ".[docs]"
+  script:
+    - mkdocs build --site-dir public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
