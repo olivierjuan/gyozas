@@ -1,7 +1,7 @@
 # Gyozas
 
 <p align="center">
-  <img src="https://olivierjuan/gyozas/assets/gyozas.png" alt="Gyozas logo" width="200"/>
+  <img src="docs/assets/gyozas.png" alt="Gyozas logo" width="200"/>
 </p>
 
 [![CI](https://github.com/olivierjuan/gyozas/actions/workflows/ci.yml/badge.svg)](https://github.com/olivierjuan/gyozas/actions/workflows/ci.yml)
