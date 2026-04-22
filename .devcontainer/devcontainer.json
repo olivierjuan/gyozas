@@ -5,6 +5,9 @@
   },
   "remoteUser": "vscode",
   "runArgs": ["--tmpfs", "/tmp:rw,exec,nosuid,nodev,mode=1777"],
+  "features": {
+    "nexus.retd.edf.fr:5145/osiris-r36-docker/edf-corporate-setup:1": {}
+  },  
   "customizations": {
     "vscode": {
       "extensions": [
