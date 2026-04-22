@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN useradd -m -s /bin/bash vscode \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+RUN chown -R vscode:$(id -ng vscode) /workspaces/*
 USER vscode
 WORKDIR /home/vscode
 
