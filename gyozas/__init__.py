@@ -18,6 +18,7 @@ from gyozas.instances.capacitated_facility_location import CapacitatedFacilityLo
 from gyozas.instances.combinatorial_auction import CombinatorialAuctionGenerator
 from gyozas.instances.files import FileGenerator
 from gyozas.instances.independent_set import IndependentSetGenerator
+from gyozas.instances.multiple_knapsack import MultipleKnapsackGenerator
 from gyozas.instances.set_cover import SetCoverGenerator
 from gyozas.observations import NodeBipartite, NodeBipartiteEcole, NodeBipartiteSCIP
 from gyozas.observations.meta_observation import MetaObservation
@@ -43,6 +44,7 @@ __all__ = [
     "InstanceGenerator",
     "LPIterations",
     "MetaObservation",
+    "MultipleKnapsackGenerator",
     "NNodes",
     "NodeBipartite",
     "NodeBipartiteSCIP",

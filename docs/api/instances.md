@@ -20,6 +20,10 @@
 
 ::: gyozas.instances.capacitated_facility_location.CapacitatedFacilityLocationGenerator
 
+## MultipleKnapsackGenerator
+
+::: gyozas.instances.multiple_knapsack.MultipleKnapsackGenerator
+
 ## FileGenerator
 
 ::: gyozas.instances.files.FileGenerator

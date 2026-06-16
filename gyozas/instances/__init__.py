@@ -3,6 +3,7 @@ from .combinatorial_auction import CombinatorialAuctionGenerator
 from .files import FileGenerator
 from .independent_set import IndependentSetGenerator
 from .instance_generator import InstanceGenerator
+from .multiple_knapsack import MultipleKnapsackGenerator
 from .set_cover import SetCoverGenerator
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "CombinatorialAuctionGenerator",
     "IndependentSetGenerator",
     "CapacitatedFacilityLocationGenerator",
+    "MultipleKnapsackGenerator",
     "FileGenerator",
 ]
