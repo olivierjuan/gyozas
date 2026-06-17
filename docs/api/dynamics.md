@@ -20,6 +20,10 @@
 
 ::: gyozas.dynamics.primal_search.PrimalSearchDynamics
 
+## ProbingDynamics
+
+::: gyozas.dynamics.probing.ProbingDynamics
+
 ## ExtraBranchingActions
 
 ::: gyozas.dynamics.branching.ExtraBranchingActions

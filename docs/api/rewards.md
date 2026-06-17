@@ -20,6 +20,14 @@
 
 ::: gyozas.rewards.lp_iterations.LPIterations
 
+## StrongBranchingLPIterations
+
+::: gyozas.rewards.strong_branching_lp_iterations.StrongBranchingLPIterations
+
+## TotalLPIterations
+
+::: gyozas.rewards.total_lp_iterations.TotalLPIterations
+
 ## DualIntegral
 
 ::: gyozas.rewards.integral_bound.DualIntegral

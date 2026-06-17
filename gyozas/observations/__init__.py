@@ -1,6 +1,7 @@
 from .branching_tree import BranchingTreeObservation
 from .meta_observation import MetaObservation
 from .node_bipartite_ecole import NodeBipartiteEcole
+from .node_bipartite_probing import NodeBipartiteProbing
 from .node_bipartite_scip import NodeBipartiteSCIP
 from .pseudo_cost import Pseudocosts
 from .strong_branching_scores import StrongBranchingScores
@@ -16,6 +17,7 @@ __all__ = [
     "NodeBipartite",
     "NodeBipartiteSCIP",
     "NodeBipartiteEcole",
+    "NodeBipartiteProbing",
     "Pseudocosts",
     "StrongBranchingScores",
     "MetaObservation",

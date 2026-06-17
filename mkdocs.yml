@@ -69,6 +69,7 @@ nav:
   - Examples:
     - Branching Agent: examples/branching.md
     - Node Selection Agent: examples/node-selection.md
+    - Probing Agent: examples/probing.md
   - Migrating from Ecole: migrating-from-ecole.md
   - API Reference:
     - Environment: api/environment.md

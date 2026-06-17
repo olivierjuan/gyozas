@@ -26,6 +26,10 @@
 
 ::: gyozas.observations.node_bipartite_scip.NodeBipartiteSCIP
 
+## NodeBipartiteProbing
+
+::: gyozas.observations.node_bipartite_probing.NodeBipartiteProbing
+
 ## Pseudocosts
 
 ::: gyozas.observations.pseudo_cost.Pseudocosts
