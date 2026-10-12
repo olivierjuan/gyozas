@@ -19,7 +19,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 - **R2.1** 🔴 Support **dual de SCIP 6.0.1 et 8.0.4**, installables côte à côte, sélection par config ; la version est enregistrée dans le résultat de chaque run. *(spéc. §4)*
 - **R2.2** ✅ Configuration solveur déclarative par protocole (`SolverConfig`, profils nommés sérialisables avec les résultats ; les valeurs exactes du profil Lin 2022 restent à renseigner). *(spéc. §2 piste A)*
 - **R2.3** ✅ Callbacks complets : sélection de variable (brancher avec la politique), collection de trajectoires d'expert, lecture des statistiques d'arbre (nœud courant + cumulatives). *(checklist §3 TreeGate/T-BranT/TGPPO)*
-- **R2.4** 🟡 Déterminisme par triplet (graine solveur, graine Python/NumPy, graine d'augmentation) : le triplet fait partie de l'identité d'un run et se réplique à l'identique. *(spéc. §2 « 5 graines », §8 bruit de réentraînement)*
+- **R2.4** ✅ Déterminisme par triplet (`SeedTriplet` : graine solveur, graine Python/NumPy, graine d'augmentation) : le triplet fait partie de l'identité d'un run et se réplique à l'identique. *(spéc. §2 « 5 graines », §8 bruit de réentraînement)*
 - **R2.5** ✅ Budget de résolution paramétrable (temps et/ou nœuds, `SetLimits`) avec **état de fin toujours rapporté** (`SolveStatus`) : résolue, ou tronquée au budget (et lequel). *(spéc. §5.3 — le piège de troncature)*
 
 ## R3 — Instances, strates, splits
