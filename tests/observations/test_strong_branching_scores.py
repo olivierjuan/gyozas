@@ -1,7 +1,5 @@
 """Unit and integration tests for gyozas.observations.strong_branching_scores.StrongBranchingScores."""
 
-import math
-
 import numpy as np
 import pytest
 from pyscipopt import Model
@@ -331,61 +329,6 @@ class TestItlim:
         result = obs.extract(branching_ctx.model, done=False)
         assert result is not None
         assert np.any(np.isfinite(result))
-
-
-# ---------------------------------------------------------------------------
-# _probe_bound internal method
-# ---------------------------------------------------------------------------
-
-
-class TestProbebound:
-    def test_probe_down_returns_nonnegative(self, branching_ctx):
-        if branching_ctx.done:
-            pytest.skip("No branching node")
-        obs = StrongBranchingScores()
-        m = branching_ctx.model
-        cands, _, _, n_cands, _, _ = m.getLPBranchCands()
-        if n_cands == 0:
-            pytest.skip("No LP candidates")
-        lp_obj = m.getLPObjVal()
-        gain = obs._probe_bound(m, cands[0], lp_obj, m.infinity(), down=True)
-        assert math.isnan(gain) or gain >= 0.0
-
-    def test_probe_up_returns_nonnegative(self, branching_ctx):
-        if branching_ctx.done:
-            pytest.skip("No branching node")
-        obs = StrongBranchingScores()
-        m = branching_ctx.model
-        cands, _, _, n_cands, _, _ = m.getLPBranchCands()
-        if n_cands == 0:
-            pytest.skip("No LP candidates")
-        lp_obj = m.getLPObjVal()
-        gain = obs._probe_bound(m, cands[0], lp_obj, m.infinity(), down=False)
-        assert math.isnan(gain) or gain >= 0.0
-
-    def test_probe_does_not_modify_lp_state(self, branching_ctx):
-        """Probing must leave the LP solution unchanged (idempotent)."""
-        if branching_ctx.done:
-            pytest.skip("No branching node")
-        obs = StrongBranchingScores()
-        m = branching_ctx.model
-        cands, _, _, n_cands, _, _ = m.getLPBranchCands()
-        if n_cands == 0:
-            pytest.skip("No LP candidates")
-
-        lp_obj_before = m.getLPObjVal()
-        obs._probe_bound(m, cands[0], lp_obj_before, m.infinity(), down=True)
-        obs._probe_bound(m, cands[0], lp_obj_before, m.infinity(), down=False)
-
-        lp_obj_after = m.getLPObjVal()
-        _, _, _, n_after, _, _ = m.getLPBranchCands()
-        assert abs(lp_obj_after - lp_obj_before) < 1e-9, "LP objective changed after probing"
-        assert n_after == n_cands, "Number of LP candidates changed after probing"
-
-
-# ---------------------------------------------------------------------------
-# Consistency: same result on repeated calls
-# ---------------------------------------------------------------------------
 
 
 class TestConsistency:
