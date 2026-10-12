@@ -45,3 +45,27 @@ class TestProfiles:
     def test_get_unknown_profile_raises(self):
         with pytest.raises(KeyError, match="no-such-profile"):
             get_profile("no-such-profile")
+
+    def test_lin2022_profile_applies(self):
+        profile = get_profile("lin2022")
+        model = Model()
+        profile.apply(model)
+        assert model.getParam("limits/time") == 3600.0
+        assert model.getParam("limits/nodes") == -1
+        assert model.getParam("conflict/usesb") is False
+        assert model.getParam("heuristics/feaspump/freq") == -1
+        assert model.getParam("heuristics/locks/freq") == -1
+
+    def test_lin2022_profile_disables_all_heuristics(self):
+        model = Model()
+        profile = get_profile("lin2022")
+        profile.apply(model)
+        for name in profile.params:
+            if name.startswith("heuristics/"):
+                assert model.getParam(name) == -1, name
+
+    def test_apply_with_cutoff_sets_objlimit(self):
+        profile = SolverConfig(name="cutoff-test", params={"display/verblevel": 0})
+        model = Model()
+        profile.apply(model, cutoff=123.0)
+        assert model.getObjlimit() == 123.0
