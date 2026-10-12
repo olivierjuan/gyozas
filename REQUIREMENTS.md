@@ -26,7 +26,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 - **R3.1** 🟡 Les trois strates du tronc universel embarquées comme données : familles Ecole synthétiques (setcover/cauctions/indset/facilities, faciles + medium), MIPLIB-S (les 27 de TreeGate), MILP-L (les 73 de Mamba, 57 faciles / 16 difficiles). *(spéc. §2 piste A)*
 - **R3.2** 🔴 Les splits train/test d'origine **respectés à l'identique** : ils sont embarqués dans les données de strate, jamais reconstruits par le harnais (fuite impossible, comparabilité directe aux publications). *(spéc. §2 piste A)*
-- **R3.3** 🔴 Accès par clé (strate, split, instance) avec **manifeste signé** : hash de chaque instance, comptage, provenance. Le manifeste est l'unité de gel du protocole (G2). *(roadmap phase 2 / G2)*
+- **R3.3** ✅ Accès par clé (strate, split, instance) avec **manifeste signé** (`InstanceManifest` : SHA-256 de chaque instance, comptage par strate/split, provenance, hash de contenu du manifeste = signature) ; `verify` détecte toute altération. Le manifeste est l'unité de gel du protocole (G2). *(roadmap phase 2 / G2)*
 - **R3.4** 🟡 *(extension)* Ajout de strates sans refactor : strate pilote EDF issue de `n_campagne_adonis` (hétérogénéité extrême, étiquette de difficulté candidate = écart prévu/réalisé) ; Distributional MIPLIB si elle sort comme bibliothèque de distributions. *(spéc. §6 cadrage CIFRE, bilan OpenReview)*
 
 ## R4 — Collection d'expert et augmentation

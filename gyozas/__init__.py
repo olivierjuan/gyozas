@@ -29,6 +29,7 @@ from gyozas.instances.files import FileGenerator
 from gyozas.instances.independent_set import IndependentSetGenerator
 from gyozas.instances.multiple_knapsack import MultipleKnapsackGenerator
 from gyozas.instances.set_cover import SetCoverGenerator
+from gyozas.manifest import InstanceManifest, file_hash
 from gyozas.metrics import (
     catastrophic_losses,
     friedman_nemenyi,
@@ -87,6 +88,7 @@ __all__ = [
     "GymnasiumWrapper",
     "IndependentSetGenerator",
     "InstanceGenerator",
+    "InstanceManifest",
     "LPIterations",
     "MetaObservation",
     "MultipleKnapsackGenerator",
@@ -106,6 +108,7 @@ __all__ = [
     "available_profiles",
     "catastrophic_losses",
     "friedman_nemenyi",
+    "file_hash",
     "get_profile",
     "paired_per_instance_ratios",
     "quantiles",
