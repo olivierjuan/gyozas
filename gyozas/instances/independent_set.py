@@ -38,8 +38,8 @@ class IndependentSetGenerator(InstanceGenerator):
         clique_partition = list(nx.find_cliques_recursive(graph))
 
         # Clique constraints
-        for clique in clique_partition:
-            model.addCons(quicksum(b_vars[n] for n in clique) <= 1.0, name=f"clique_{clique}")
+        for idx, clique in enumerate(clique_partition):
+            model.addCons(quicksum(b_vars[n] for n in clique) <= 1.0, name=f"clique_{idx}")
 
         # Edge constraints for edges not covered by cliques
         clique_index = CliqueIndex(clique_partition, graph.number_of_nodes())
