@@ -29,6 +29,20 @@ from gyozas.instances.files import FileGenerator
 from gyozas.instances.independent_set import IndependentSetGenerator
 from gyozas.instances.multiple_knapsack import MultipleKnapsackGenerator
 from gyozas.instances.set_cover import SetCoverGenerator
+from gyozas.metrics import (
+    catastrophic_losses,
+    friedman_nemenyi,
+    paired_per_instance_ratios,
+    quantiles,
+    save_table,
+    sgm_of_ratios,
+    shifted_geometric_mean,
+    solved_vs_truncated,
+    summary_table,
+    wilcoxon_holm,
+    wilcoxon_pair,
+    win_rate,
+)
 from gyozas.observations import NodeBipartite, NodeBipartiteEcole, NodeBipartiteSCIP, SolverStats
 from gyozas.observations.meta_observation import MetaObservation
 from gyozas.rewards.done import Done
@@ -90,6 +104,18 @@ __all__ = [
     "SolverStats",
     "SolveStatus",
     "available_profiles",
+    "catastrophic_losses",
+    "friedman_nemenyi",
     "get_profile",
+    "paired_per_instance_ratios",
+    "quantiles",
     "register_profile",
+    "save_table",
+    "shifted_geometric_mean",
+    "solved_vs_truncated",
+    "sgm_of_ratios",
+    "summary_table",
+    "wilcoxon_holm",
+    "wilcoxon_pair",
+    "win_rate",
 ]

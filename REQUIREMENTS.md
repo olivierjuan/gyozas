@@ -46,17 +46,17 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 ## R6 — Évaluation
 
 - **R6.1** 🟡 Run B&B complet avec la politique branchée, contre les baselines classiques (pscost, relpscost, SB borné) sur les **mêmes instances et graines** ; la baseline solveur par défaut est l'unité 1.000×. *(spéc. §2 piste A ; description TreeRoPE)*
-- **R6.2** 🔴 Unités appariées **par instance** : SGM des nœuds par instance, jamais moyennes transverses de décisions ni agrégats qui masquent l'hétérogénéité des échelles entre instances. *(spéc. §5.2)*
-- **R6.3** 🟡 **Comptage d'instances résolues à la limite** comme métrique primaire sur les strates difficiles (la leçon TreeRoPE : le classement peut s'inverser une fois les tronquées sorties) ; SGM calculée sur résolues seulement ; PD integral pour la progression du primal gap en temps. *(spéc. §5.3)*
+- **R6.2** ✅ Unités appariées **par instance** (`paired_per_instance_ratios`, `sgm_of_ratios`) : SGM des nœuds par instance, jamais moyennes transverses de décisions ni agrégats qui masquent l'hétérogénéité des échelles entre instances. *(spéc. §5.2)*
+- **R6.3** ✅ **Comptage d'instances résolues à la limite** (`solved_vs_truncated`) comme métrique primaire sur les strates difficiles (la leçon TreeRoPE : le classement peut s'inverser une fois les tronquées sorties) ; SGM calculée sur résolues seulement ; PD integral pour la progression du primal gap en temps (`PrimalIntegral`). *(spéc. §5.3)*
 - **R6.4** 🔴 (Réservée à la comparaison GCNN+SB natif vs GCNN+relpscost sur les synthétiques — la mesure du *coût du passage à l'expert scalable*, chiffrée une fois pour toute la littérature.) *(spéc. §2 piste B, comparaison 1)*
 
 ## R7 — Métriques et statistique
 
 - **R7.1** 🔴 L'acc@1 n'est **jamais rapportée seule** : toujours accompagnée de la distribution de nœuds multi-optimaux de la collection (R4.3), et jamais comparée entre experts différents. *(spéc. §5.1)*
-- **R7.2** 🔴 Double reporting systématique **médiane vs queue** : SGM par instance, quantiles p50/p95, et liste des pertes catastrophiques nommées (la leçon TGPPO : domination médiane 78,8 % et SGM agrégée pire peuvent coexister). *(spéc. §5, §1.5)*
-- **R7.3** 🔴 Tests de rangs automatisés : **Friedman + Nemenyi sur les rangs intra-instance** et **Wilcoxon apparié unilatéral avec correction de Holm** pour les deux-à-deux — implémentés une fois dans la librairie, appliqués partout. *(spéc. §5, §1.5)*
-- **R7.4** 🔴 Win rates head-to-head par instance entre toute paire de méthodes. *(spéc. §2 piste A ; protocole TGPPO)*
-- **R7.5** 🔴 Tableau de sortie unique (méthode × strate × métrique) exporté brut (CSV/JSON) + rendu lisible ; les mêmes données alimentent le papier et les repo de résultats. *(roadmap phase 6)*
+- **R7.2** ✅ Double reporting systématique **médiane vs queue** (`summary_table` : SGM, p50/p95, pertes catastrophiques nommées) (la leçon TGPPO : domination médiane 78,8 % et SGM agrégée pire peuvent coexister). *(spéc. §5, §1.5)*
+- **R7.3** ✅ Tests de rangs automatisés : **Friedman + Nemenyi sur les rangs intra-instance** (`friedman_nemenyi`) et **Wilcoxon apparié unilatéral avec correction de Holm** (`wilcoxon_pair`/`wilcoxon_holm`) — implémentés une fois dans la librairie, appliqués partout. *(spéc. §5, §1.5)*
+- **R7.4** ✅ Win rates head-to-head par instance entre toute paire de méthodes (`win_rate`). *(spéc. §2 piste A ; protocole TGPPO)*
+- **R7.5** ✅ Tableau de sortie unique (méthode × métrique) exporté brut JSON + CSV lisible (`summary_table`/`save_table`) ; les mêmes données alimentent le papier et les repo de résultats. *(roadmap phase 6)*
 
 ## R8 — Reproductibilité et gel de protocole
 

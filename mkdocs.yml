@@ -84,3 +84,4 @@ nav:
     - Experts: api/experts.md
     - Data Collection: api/collection.md
     - Trajectories: api/trajectories.md
+    - Metrics and Statistics: api/metrics.md
