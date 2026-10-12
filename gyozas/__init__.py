@@ -7,6 +7,7 @@ try:
 except PackageNotFoundError:
     __version__ = "unknown"
 
+from gyozas.collection import CollectionMetadata
 from gyozas.dynamics import Dynamics
 from gyozas.dynamics.branching import (
     BranchingDecision,
@@ -48,6 +49,7 @@ __all__ = [
     "BranchingDynamics",
     "PairedCounters",
     "CapacitatedFacilityLocationGenerator",
+    "CollectionMetadata",
     "CombinatorialAuctionGenerator",
     "Done",
     "DualIntegral",

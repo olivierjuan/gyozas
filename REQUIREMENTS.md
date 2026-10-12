@@ -33,7 +33,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 - **R4.1** ✅ Experts pluggables — au minimum : **strong branching** (`StrongBranchingExpert`, famille synthétique, piste B bipartite-LP) et **relpscost** (`RelpscostExpert` sur les scores pseudocost natifs de SCIP, l'expert commun scalable, piste A) ; l'expert est un paramètre du setup, pas de la méthode. *(spéc. §1.2, §2 piste B)*
 - **R4.2** 🔴 Augmentation Zarpellon (seed s, k) paramétrable par config — **native, jamais imposée** (les méthodes qui s'en servent gardent leur avantage, celles qui ne l'utilisent pas ne la subissent pas). *(spéc. §1.3)*
-- **R4.3** 🔴 Métadonnées de collection enregistrées : notamment la **distribution des nœuds multi-optimaux** de chaque jeu collecté — sans elle, l'acc@1 est illisible. *(description TreeRoPE, piège 1 ; spéc. §5.1)*
+- **R4.3** ✅ Métadonnées de collection enregistrées (`CollectionMetadata`) : notamment la **distribution des nœuds multi-optimaux** de chaque jeu collecté — sans elle, l'acc@1 est illisible. *(description TreeRoPE, piège 1 ; spéc. §5.1)*
 - **R4.4** 🟡 Enregistrement des trajectoires RL dans un format commun (états, actions, récompenses, reconstruction rétrospective depuis l'arbre — le mode RetroBranching/Scavuzzo), consommables hors ligne pour l'entraînement. *(checklist §3 RetroBranching/Scavuzzo)*
 
 ## R5 — Entraînement et exécution
