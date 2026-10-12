@@ -81,3 +81,4 @@ nav:
     - Instance Modifiers: api/modifiers.md
     - Solver Configuration: api/solver-config.md
     - Seeds: api/seeds.md
+    - Experts: api/experts.md
