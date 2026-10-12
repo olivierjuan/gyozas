@@ -83,3 +83,4 @@ nav:
     - Seeds: api/seeds.md
     - Experts: api/experts.md
     - Data Collection: api/collection.md
+    - Trajectories: api/trajectories.md

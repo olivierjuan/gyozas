@@ -38,6 +38,13 @@ from gyozas.rewards.nnodes import NNodes
 from gyozas.rewards.solving_time import SolvingTime
 from gyozas.seeds import SeedTriplet
 from gyozas.solver_config import SolverConfig, available_profiles, get_profile, register_profile
+from gyozas.trajectories import (
+    Trajectory,
+    TrajectoryRecorder,
+    load_trajectories,
+    retrospective_trajectories,
+    save_trajectories,
+)
 
 __all__ = [
     "BranchingDecision",
@@ -45,6 +52,11 @@ __all__ = [
     "PseudocostExpert",
     "RelpscostExpert",
     "StrongBranchingExpert",
+    "Trajectory",
+    "TrajectoryRecorder",
+    "load_trajectories",
+    "retrospective_trajectories",
+    "save_trajectories",
     "BranchingDirection",
     "BranchingDynamics",
     "PairedCounters",
