@@ -137,7 +137,7 @@ def _fill_static_row(
     row, model: Model, scip_row, lhs_or_rhs: float, sign: float, row_norm: float, obj_norm: float, fm: dict
 ) -> None:
     _put(row, fm, "bias", sign * (lhs_or_rhs - scip_row.getConstant()) / row_norm)
-    _put(row, fm, "obj_cosine", - _obj_cosine(model, scip_row, obj_norm))
+    _put(row, fm, "obj_cosine", -_obj_cosine(model, scip_row, obj_norm))
 
 
 def _fill_dynamic_row(

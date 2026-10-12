@@ -23,3 +23,15 @@
 ## ExtraBranchingActions
 
 ::: gyozas.dynamics.branching.ExtraBranchingActions
+
+## BranchingDecision
+
+::: gyozas.dynamics.branching.BranchingDecision
+
+## BranchingDirection
+
+::: gyozas.dynamics.branching.BranchingDirection
+
+## PairedCounters
+
+::: gyozas.dynamics.branching.PairedCounters

@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from enum import IntEnum
 
 import numpy as np
@@ -16,12 +17,82 @@ class ExtraBranchingActions(IntEnum):
     REDUCE_DOMAIN = -3
 
 
+class BranchingDirection(IntEnum):
+    """Direction of a branching decision, i.e. which bound of the variable is tightened.
+
+    ``UP`` tightens the lower bound (child node with ``var >= ceil(value)``),
+    ``DOWN`` tightens the upper bound (child node with ``var <= floor(value)``).
+    """
+
+    UP = 1
+    DOWN = -1
+
+
+# pyscipopt SCIP_BOUNDTYPE: 0 = LOWER bound was set, 1 = UPPER bound was set.
+_BOUNDTYPE_UPPER = 1
+
+
+@dataclass(frozen=True)
+class BranchingDecision:
+    """Typed branching decision (variable x direction).
+
+    The decision that created a node: which variable was branched on and in which
+    direction its bound was tightened. It is the unit of the *decision* counter in
+    :class:`PairedCounters` and is kept separate from node counts (see
+    :class:`PairedCounters` for why the two must never be aggregated together).
+
+    For a value branching (``branchVarVal``) both children are created at once, so
+    a *chosen action* does not carry a direction; the direction is well defined per
+    *processed node* through the branching that created it, which is what
+    :attr:`BranchingDynamics.last_branching_decision` reports.
+    """
+
+    variable_name: str
+    variable_index: int
+    direction: BranchingDirection | None
+    lp_value: float
+
+
+@dataclass
+class PairedCounters:
+    """Paired decision/node counters for a branching policy.
+
+    Decisions and nodes are counted **separately** and must never be mixed into a
+    single aggregate: a node count aggregates solver-side work while a decision
+    count aggregates policy-side work, and the two differ. On the literature's
+    reference setups the ratio ``nodes / decisions`` sits around ~1.84-2.00x
+    (auxiliary nodes are processed without a policy decision, and one decision
+    creates two children). Report both, or report the ratio explicitly.
+
+    Attributes
+    ----------
+    decisions:
+        Number of branching decisions taken by the policy (variable branchings
+        actually applied).
+    nodes:
+        Number of distinct nodes at which the policy was consulted.
+    """
+
+    decisions: int = 0
+    nodes: int = 0
+
+    @property
+    def nodes_per_decision(self) -> float:
+        if self.decisions == 0:
+            return float("nan")
+        return self.nodes / self.decisions
+
+    def as_dict(self) -> dict[str, int | float]:
+        return {"decisions": self.decisions, "nodes": self.nodes, "nodes_per_decision": self.nodes_per_decision}
+
+
 class BranchingOracle(Branchrule):
-    def __init__(self, scip: Model, obs_event, action_event, die_event) -> None:
+    def __init__(self, scip: Model, obs_event, action_event, die_event, dynamics: "BranchingDynamics") -> None:
         self.scip = scip
         self.obs_event = obs_event
         self.action_event = action_event
         self.die_event = die_event
+        self.dynamics = dynamics
         self.obs: NDArray[np.int64] | None = None
         self.action = None
         self.count = 0
@@ -32,7 +103,10 @@ class BranchingOracle(Branchrule):
             self.scip.interruptSolve()
             return {"result": SCIP_RESULT.DIDNOTRUN}
         self.count += 1
-        self.node_order[self.count] = self.scip.getCurrentNode().getNumber()
+        current_node = self.scip.getCurrentNode()
+        self.node_order[self.count] = current_node.getNumber()
+        self.dynamics.counters.nodes += 1
+        self.dynamics.last_branching_decision = self._creating_decision(current_node)
         branch_cands, branch_cand_sols, branch_cand_fracs, ncands, npriocands, nimplcands = self.scip.getLPBranchCands()
         branch_cands = branch_cands[:ncands]
         action_set = np.array(
@@ -66,8 +140,26 @@ class BranchingOracle(Branchrule):
         if chosen_idx is None:
             raise ValueError(f"Action {best_cand_idx} not found in action set {action_set}")
         self.scip.branchVarVal(branch_cands[chosen_idx], branch_cand_sols[chosen_idx])
+        self.dynamics.counters.decisions += 1
 
         return {"result": SCIP_RESULT.BRANCHED}
+
+    def _creating_decision(self, node) -> BranchingDecision | None:
+        """The branching decision (variable x direction) that created this node."""
+        if node is None or node.getNParentBranchings() == 0:
+            return None
+        branching = node.getParentBranchings()
+        if branching is None:
+            return None
+        vars_, vals, btypes = branching
+        var, val, btype = vars_[0], vals[0], btypes[0]
+        direction = BranchingDirection.DOWN if btype == _BOUNDTYPE_UPPER else BranchingDirection.UP
+        return BranchingDecision(
+            variable_name=var.name,
+            variable_index=var.getCol().getLPPos(),
+            direction=direction,
+            lp_value=float(val),
+        )
 
 
 class _NodeEventHandler(Eventhdlr):
@@ -120,6 +212,8 @@ class BranchingDynamics(ThreadedDynamics):
         self.model: Model
         self.infeasible_nodes: list = []
         self.feasible_nodes: list = []
+        self.counters = PairedCounters()
+        self.last_branching_decision: BranchingDecision | None = None
         self.current_node_id = None
         self._last_node_id = None
         self.with_extra_actions: NDArray[np.int64] | None = (
@@ -143,7 +237,9 @@ class BranchingDynamics(ThreadedDynamics):
         self.die_event.clear()
         self.infeasible_nodes = []
         self.feasible_nodes = []
-        self.branch_rule = BranchingOracle(model, self.obs_event, self.action_event, self.die_event)
+        self.counters = PairedCounters()
+        self.last_branching_decision = None
+        self.branch_rule = BranchingOracle(model, self.obs_event, self.action_event, self.die_event, self)
         model.includeBranchrule(
             self.branch_rule,
             "python-mostinf",

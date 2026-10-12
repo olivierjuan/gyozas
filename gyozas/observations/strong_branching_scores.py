@@ -112,9 +112,9 @@ class StrongBranchingScores:
                 # Fractional candidate: real fractional strong branching.  Here an
                 # infeasible child is a *genuine* cutoff (rare and informative), so
                 # an infinite gain is appropriate and does not create mass ties.
-                (down, up, _downvalid, _upvalid, downinf, upinf,
-                 _downconflict, _upconflict, lperror) = model.getVarStrongbranch(
-                    var, self.itlim, idempotent=True, integral=False)
+                (down, up, _downvalid, _upvalid, downinf, upinf, _downconflict, _upconflict, lperror) = (
+                    model.getVarStrongbranch(var, self.itlim, idempotent=True, integral=False)
+                )
 
                 if lperror:
                     # Unresolved LP error: leave NaN (treated as non-candidate).

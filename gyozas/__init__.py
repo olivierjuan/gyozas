@@ -8,7 +8,13 @@ except PackageNotFoundError:
     __version__ = "unknown"
 
 from gyozas.dynamics import Dynamics
-from gyozas.dynamics.branching import BranchingDynamics, ExtraBranchingActions
+from gyozas.dynamics.branching import (
+    BranchingDecision,
+    BranchingDirection,
+    BranchingDynamics,
+    ExtraBranchingActions,
+    PairedCounters,
+)
 from gyozas.dynamics.node_selection import NodeSelectionDynamics
 from gyozas.environment import Environment
 from gyozas.gymnasium_wrapper import GymnasiumWrapper
@@ -29,7 +35,10 @@ from gyozas.rewards.nnodes import NNodes
 from gyozas.rewards.solving_time import SolvingTime
 
 __all__ = [
+    "BranchingDecision",
+    "BranchingDirection",
     "BranchingDynamics",
+    "PairedCounters",
     "CapacitatedFacilityLocationGenerator",
     "CombinatorialAuctionGenerator",
     "Done",
