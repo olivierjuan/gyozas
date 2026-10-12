@@ -11,7 +11,12 @@ class BranchingTreeObservation:
         self.tree = nx.DiGraph()
 
     def extract(self, model: Model, done: bool) -> nx.DiGraph:
-        self._add_current_node_from_pyscipopt(model)
+        # When done the solve has left the SOLVING stage: getCurrentNode /
+        # getOpenNodes raise "method cannot be called at this time".  Return the
+        # accumulated tree untouched so this works as an information_function
+        # (called with done=True) as well as an observation_function.
+        if not done:
+            self._add_current_node_from_pyscipopt(model)
         return self.tree
 
     def _add_current_node_from_pyscipopt(self, model: pyscipopt.Model) -> None:
