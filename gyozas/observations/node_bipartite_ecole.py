@@ -111,7 +111,7 @@ def _fill_dynamic_var(row, model: Model, var: Variable, col: Column, obj_norm: f
     _put(row, fm, "has_ub", float(has_ub))
     _put(row, fm, "red_cost", model.getVarRedcost(var) / obj_norm)
     _put(row, fm, "sol_val", solval)
-    _put(row, fm, "sol_frac", _sol_frac(model, col))
+    _put(row, fm, "sol_frac", 0.0 if var.vtype() == "CONTINUOUS" else _sol_frac(model, col))
     _put(row, fm, "sol_at_lb", float(has_lb and model.isEQ(solval, lb)))
     _put(row, fm, "sol_at_ub", float(has_ub and model.isEQ(solval, ub)))
     _put(row, fm, "age", col.getAge() / (n_lps + _CSTE))
@@ -137,7 +137,7 @@ def _fill_static_row(
     row, model: Model, scip_row, lhs_or_rhs: float, sign: float, row_norm: float, obj_norm: float, fm: dict
 ) -> None:
     _put(row, fm, "bias", sign * (lhs_or_rhs - scip_row.getConstant()) / row_norm)
-    _put(row, fm, "obj_cosine", sign * _obj_cosine(model, scip_row, obj_norm))
+    _put(row, fm, "obj_cosine", - _obj_cosine(model, scip_row, obj_norm))
 
 
 def _fill_dynamic_row(
