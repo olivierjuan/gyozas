@@ -161,6 +161,7 @@ Built-in observations:
 | `NodeBipartiteSCIP` | Bipartite graph via PySCIPOpt's C implementation |
 | `Pseudocosts` | Per-variable pseudocost scores (1-D array, NaN for non-candidates) |
 | `StrongBranchingScores` | Full or partial strong-branching scores via LP probing |
+| `SolverStats` | ~35 O(1) solver scalars for the current node and the search tree (flat `dict[str, float]`) |
 | `MetaObservation` | Combines multiple observation functions into a tuple |
 
 ### BipartiteGraph

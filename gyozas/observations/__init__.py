@@ -3,6 +3,7 @@ from .meta_observation import MetaObservation
 from .node_bipartite_ecole import NodeBipartiteEcole
 from .node_bipartite_scip import NodeBipartiteSCIP
 from .pseudo_cost import Pseudocosts
+from .solver_stats import SolverStats
 from .strong_branching_scores import StrongBranchingScores
 from .structs import BipartiteGraph, EdgeFeatures, ObservationFunction
 
@@ -17,6 +18,7 @@ __all__ = [
     "NodeBipartiteSCIP",
     "NodeBipartiteEcole",
     "Pseudocosts",
+    "SolverStats",
     "StrongBranchingScores",
     "MetaObservation",
 ]

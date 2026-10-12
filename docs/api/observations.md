@@ -30,6 +30,10 @@
 
 ::: gyozas.observations.pseudo_cost.Pseudocosts
 
+## SolverStats
+
+::: gyozas.observations.solver_stats.SolverStats
+
 ## StrongBranchingScores
 
 ::: gyozas.observations.strong_branching_scores.StrongBranchingScores
