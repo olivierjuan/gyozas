@@ -28,6 +28,7 @@ from gyozas.instances.independent_set import IndependentSetGenerator
 from gyozas.instances.multiple_knapsack import MultipleKnapsackGenerator
 from gyozas.instances.set_cover import SetCoverGenerator
 from gyozas.observations import NodeBipartite, NodeBipartiteEcole, NodeBipartiteSCIP, SolverStats
+from gyozas.solver_config import SolverConfig, available_profiles, get_profile, register_profile
 from gyozas.observations.meta_observation import MetaObservation
 from gyozas.rewards.done import Done
 from gyozas.rewards.integral_bound import DualIntegral, PrimalDualIntegral, PrimalIntegral
@@ -64,6 +65,10 @@ __all__ = [
     "PrimalIntegral",
     "SetCoverGenerator",
     "SolvingTime",
+    "SolverConfig",
     "SolverStats",
     "SolveStatus",
+    "available_profiles",
+    "get_profile",
+    "register_profile",
 ]

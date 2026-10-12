@@ -79,3 +79,4 @@ nav:
     - Information Functions: api/informations.md
     - Instance Generators: api/instances.md
     - Instance Modifiers: api/modifiers.md
+    - Solver Configuration: api/solver-config.md
