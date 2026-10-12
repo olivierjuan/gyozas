@@ -19,6 +19,7 @@ from gyozas.dynamics.node_selection import NodeSelectionDynamics
 from gyozas.environment import Environment
 from gyozas.gymnasium_wrapper import GymnasiumWrapper
 from gyozas.informations.empty import Empty
+from gyozas.informations.solve_status import SolveStatus
 from gyozas.instances import InstanceGenerator
 from gyozas.instances.capacitated_facility_location import CapacitatedFacilityLocationGenerator
 from gyozas.instances.combinatorial_auction import CombinatorialAuctionGenerator
@@ -64,4 +65,5 @@ __all__ = [
     "SetCoverGenerator",
     "SolvingTime",
     "SolverStats",
+    "SolveStatus",
 ]

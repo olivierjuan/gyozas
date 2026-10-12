@@ -11,3 +11,7 @@
 ## TimeSinceLastStep
 
 ::: gyozas.informations.time_since_last_step.TimeSinceLastStep
+
+## SolveStatus
+
+::: gyozas.informations.solve_status.SolveStatus

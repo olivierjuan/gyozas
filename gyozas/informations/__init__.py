@@ -3,6 +3,7 @@ from typing import Any, Protocol, runtime_checkable
 from pyscipopt import Model
 
 from .empty import Empty
+from .solve_status import SolveStatus
 from .time_since_last_step import TimeSinceLastStep
 
 
@@ -12,4 +13,4 @@ class InformationFunction(Protocol):
     def extract(self, model: Model, done: bool) -> Any: ...
 
 
-__all__ = ["InformationFunction", "Empty", "TimeSinceLastStep"]
+__all__ = ["InformationFunction", "Empty", "SolveStatus", "TimeSinceLastStep"]
