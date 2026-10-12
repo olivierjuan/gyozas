@@ -181,6 +181,8 @@ class BranchingDynamics(ThreadedDynamics):
             self._action_set = None
             return self.done, None
         action_set = self.branch_rule.obs
+        if self.with_extra_actions is not None and action_set is not None and len(action_set) > 0:
+            action_set = np.concatenate((self.with_extra_actions, action_set))
         self._action_set = action_set
         self.obs_event.clear()
         current_node = self.model.getCurrentNode()
