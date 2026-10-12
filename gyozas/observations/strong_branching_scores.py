@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 from pyscipopt import Model
 from pyscipopt.scip import PY_SCIP_STAGE
@@ -10,23 +8,40 @@ from gyozas._utils import is_fixed_domain
 class StrongBranchingScores:
     """Full strong branching scores for LP branching candidates.
 
-    Mirrors ``ecole.observation.StrongBranchingScores``, implemented in pure pyscipopt.
+    Mirrors ``ecole.observation.StrongBranchingScores``, which runs SCIP's native
+    *vanilla full strong branching* (``branching/vanillafullstrong`` with
+    ``idempotent=true``).  This implementation reproduces that algorithm in
+    pyscipopt using the native strong-branching API
+    (``startStrongbranch`` / ``getVarStrongbranch`` / ``endStrongbranch``).
 
-    For each LP branching candidate the observation temporarily enters probing
-    mode, solves the down-branch LP (``var <= floor(lp_val)``) and the up-branch
-    LP (``var >= ceil(lp_val)``), then combines the bound improvements into a
-    branch score via ``model.getBranchScoreMultiple``.
+    Why not probing
+    ---------------
+    The previous implementation entered SCIP *probing* mode
+    (``startProbing`` / ``solveProbingLP``) to evaluate each branch.  That mutates
+    SCIP's search state, which is unsafe when the observation is extracted while
+    the solve is suspended inside a branching-rule callback (e.g. gyozas'
+    threaded ``BranchingDynamics``): resuming ``optimize()`` afterwards could
+    dereference corrupted state and segfault.  Native strong branching with
+    ``idempotent=True`` leaves SCIP's state unchanged — it is exactly the API the
+    built-in strong-branching rules call from within ``branchexeclp`` — so it is
+    safe in that context and matches the ecole reference semantics.
 
-    The probing LPs are solved idempotently (no side-effects on SCIP state).
+    For each candidate the down/up dual bounds are obtained from SCIP's strong
+    branching, converted to bound gains relative to the current LP objective, and
+    combined into a branch score via ``getBranchScoreMultiple`` (SCIP's default
+    product score), the same scoring ecole/vanillafullstrong uses.
 
-    Returns a 1-D array of shape ``(n_vars,)`` with the score for each LP
-    candidate (``NaN`` for non-candidates), or ``None`` outside the solving stage.
+    Returns a 1-D array of shape ``(max_lp_pos + 1,)`` with the score for each LP
+    candidate indexed by LP position (``NaN`` for non-candidates), an empty array
+    when there are no candidates, or ``None`` outside the solving stage.
 
     Parameters
     ----------
     pseudo_candidates
-        If ``False`` (default), score LP branching candidates (fractional vars).
-        If ``True``, score pseudo-branching candidates (all non-fixed discrete vars).
+        If ``False`` (default), score LP branching candidates (fractional vars)
+        with fractional strong branching.  If ``True``, score pseudo-branching
+        candidates (all non-fixed discrete vars) with integral strong branching
+        (matching ecole's ``integralcands`` flag).
     itlim
         LP iteration limit for each strong-branching solve. -1 = no limit.
     """
@@ -39,88 +54,76 @@ class StrongBranchingScores:
         # No per-episode state to reset.
         pass
 
-    def _probe_bound(self, model: Model, var, lp_obj: float, inf: float, down: bool) -> float:
-        """Probe one branch direction and return the bound improvement (gain).
-
-        Manages its own probing session so it can be called independently.
-        Returns ``float('nan')`` on LP error, ``inf`` on cutoff, otherwise
-        ``max(0, new_lp_obj - lp_obj)``.
-        """
-        lp_val = var.getLPSol()
-        model.startProbing()
-        try:
-            model.newProbingNode()
-            if down:
-                model.chgVarUbProbing(var, math.floor(lp_val))
-            else:
-                model.chgVarLbProbing(var, math.ceil(lp_val))
-            model.constructLP()
-            lperror, cutoff = model.solveProbingLP(self.itlim)
-            if lperror:
-                return float("nan")
-            elif cutoff:
-                return inf
-            else:
-                return max(0.0, model.getLPObjVal() - lp_obj)
-        finally:
-            model.endProbing()
-
     def extract(self, model: Model, done: bool) -> np.ndarray | None:
         if done or model.getStage() != PY_SCIP_STAGE.SOLVING:
             return None
 
+        # var.getIndex() -> LP position, built ONLY from real LP columns.
+        # getLPColsData() is always valid; var.getCol() on a LOOSE / aggregated
+        # variable reads a garbage union pointer (the COLUMN assert is compiled
+        # out in release builds) and segfaults — so we never call it directly.
+        # Strong branching also requires a column variable, so non-column
+        # candidates are skipped here anyway.
+        lppos: dict[int, int] = {}
+        for col in model.getLPColsData():
+            v = col.getVar()
+            if v is not None:
+                lppos[v.getIndex()] = col.getLPPos()
+
         if self.pseudo_candidates:
             cands, n_cands, _ = model.getPseudoBranchCands()
             cands = cands[:n_cands]
-            lp_vals = [var.getLPSol() for var in cands]
+            cands = [v for v in cands if v.getIndex() in lppos]
         else:
-            cands, lp_vals, _, n_cands, _, _ = model.getLPBranchCands()
+            cands, _, _, n_cands, _, _ = model.getLPBranchCands()
             cands = cands[:n_cands]
-            lp_vals = lp_vals[:n_cands]
-            lp_vals = [val for val, var in zip(lp_vals, cands, strict=False) if not is_fixed_domain(var)]
-            cands = [var for var in cands if not is_fixed_domain(var)]
+            cands = [v for v in cands if not is_fixed_domain(v) and v.getIndex() in lppos]
 
         if not cands:
             return np.empty(0, dtype=np.float64)
 
-        max_idx = max(var.getCol().getLPPos() for var in cands) + 1
+        max_idx = max(lppos[v.getIndex()] for v in cands) + 1
         scores = np.full(max_idx, np.nan, dtype=np.float64)
 
         lp_obj = model.getLPObjVal()
         inf = model.infinity()
+        feastol = 1e-6  # SCIP default feasibility tolerance
 
-        model.startProbing()
+        model.startStrongbranch()
         try:
-            for var, lp_val in zip(cands, lp_vals, strict=False):
-                # Down branch
-                model.newProbingNode()
-                model.chgVarUbProbing(var, math.floor(lp_val))
-                model.constructLP()
-                lperror, cutoff = model.solveProbingLP(self.itlim)
-                if lperror:
-                    downgain = float("nan")
-                elif cutoff:
-                    downgain = inf
-                else:
-                    downgain = max(0.0, model.getLPObjVal() - lp_obj)
-                model.backtrackProbing(0)
+            for var in cands:
+                lp_pos = lppos[var.getIndex()]
 
-                # Up branch
-                model.newProbingNode()
-                model.chgVarLbProbing(var, math.ceil(lp_val))
-                model.constructLP()
-                lperror, cutoff = model.solveProbingLP(self.itlim)
-                if lperror:
-                    upgain = float("nan")
-                elif cutoff:
-                    upgain = inf
-                else:
-                    upgain = max(0.0, model.getLPObjVal() - lp_obj)
-                model.backtrackProbing(0)
+                # Only genuinely *fractional* candidates are real branchings.  An
+                # integral candidate (``pseudo_candidates=True`` includes every
+                # non-fixed discrete var, most of which sit at an integer LP value)
+                # has no meaningful branch: integral strong branching would round it
+                # to v±1, and e.g. a binary at 1 makes the up-branch x>=2 trivially
+                # infeasible.  Treating that as an infinite gain made ~half the
+                # candidates tie at the top score (acc@1 collapsed to 1/#ties).  We
+                # instead give integral candidates the zero-gain score (matching the
+                # old probing behaviour, where floor/ceil were no-ops → gain 0), so
+                # they stay in the candidate set but never spuriously win.
+                lp_val = var.getLPSol()
+                if abs(lp_val - round(lp_val)) <= feastol:
+                    scores[lp_pos] = model.getBranchScoreMultiple(var, [0.0, 0.0])
+                    continue
 
-                if not (math.isnan(downgain) or math.isnan(upgain)):
-                    scores[var.getCol().getLPPos()] = model.getBranchScoreMultiple(var, [downgain, upgain])
+                # Fractional candidate: real fractional strong branching.  Here an
+                # infeasible child is a *genuine* cutoff (rare and informative), so
+                # an infinite gain is appropriate and does not create mass ties.
+                (down, up, _downvalid, _upvalid, downinf, upinf,
+                 _downconflict, _upconflict, lperror) = model.getVarStrongbranch(
+                    var, self.itlim, idempotent=True, integral=False)
+
+                if lperror:
+                    # Unresolved LP error: leave NaN (treated as non-candidate).
+                    continue
+
+                downgain = inf if downinf else max(0.0, down - lp_obj)
+                upgain = inf if upinf else max(0.0, up - lp_obj)
+                scores[lp_pos] = model.getBranchScoreMultiple(var, [downgain, upgain])
         finally:
-            model.endProbing()
+            model.endStrongbranch()
 
         return scores
