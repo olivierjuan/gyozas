@@ -18,7 +18,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 ## R2 — Solveur, versions, configuration
 
-- **R2.1** 🔴 Support **dual de SCIP 6.0.1 et 8.0.4**, installables côte à côte, sélection par config ; la version est enregistrée dans le résultat de chaque run. *(spéc. §4)*
+- **R2.1** ⛔ **Abandonné (décision du 13/10/2026)** : support dual de SCIP 6.0.1 et 8.0.4. Tout le benchmark tourne sur le SCIP installé (10.x) ; la version est enregistrée dans chaque résultat (R8.1) et l'écart aux protocoles d'origine des papiers (6.0.1, sauf Mamba 8.0.4) devient une **limitation documentée**. Les `scip_protocol` des profils de fidélité (R5.4) restent en métadonnée de provenance ; le facteur version (spéc. §4) n'est pas étudié. *(spéc. §4)*
 - **R2.2** ✅ Configuration solveur déclarative par protocole (`SolverConfig`, profils nommés sérialisables avec les résultats ; profil **lin2022** = sandbox T-BranT : heuristiques primales coupées, 1 h, auxiliaires SB désactivés, cutoff à l'optimum passé par instance via `apply(cutoff=...)`). *(spéc. §2 piste A ; github.com/linjc16/TBranT)*
 - **R2.3** ✅ Callbacks complets : sélection de variable (brancher avec la politique), collection de trajectoires d'expert, lecture des statistiques d'arbre (nœud courant + cumulatives). *(checklist §3 TreeGate/T-BranT/TGPPO)*
 - **R2.4** ✅ Déterminisme par triplet (`SeedTriplet` : graine solveur, graine Python/NumPy, graine d'augmentation) : le triplet fait partie de l'identité d'un run et se réplique à l'identique. *(spéc. §2 « 5 graines », §8 bruit de réentraînement)*
@@ -78,7 +78,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 - **N'est pas le benchmark** : GYOZAS fournit les mécanismes ; le protocole gelé, les données de strate, l'entraînement des méthodes, les grilles d'expériences et les résultats appartiennent au dépôt du benchmark, qui dépend de GYOZAS.
 - **N'impose ni features uniques, ni expert unique, ni architecture** : la comparabilité porte sur les instances, le solveur, les graines et les métriques — jamais sur l'intérieur du modèle (c'est la ligne de partage piste A / piste B).
 - **N'est pas un benchmark de générateurs d'instances** (c'est GenBench-MILP) ni une bibliothèque de distributions (c'est Distributional MIPLIB) — il peut les *consommer*, il ne les remplace pas.
-- **Ne fixe pas le classement des versions de SCIP** : la dualité 6.0.1/8.0.4 est un facteur étudié (§4), pas une préférence.
+- **Ne fixe pas le classement des versions de SCIP** : le support dual 6.0.1/8.0.4 (spéc. §4) a été abandonné le 13/10/2026 — le benchmark tourne sur une seule version de SCIP, l'écart aux protocoles d'origine est une limitation documentée, pas une préférence.
 
 ## Voir aussi
 
