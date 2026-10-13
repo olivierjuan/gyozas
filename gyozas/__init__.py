@@ -55,6 +55,7 @@ from gyozas.rewards.lp_iterations import LPIterations
 from gyozas.rewards.nnodes import NNodes
 from gyozas.rewards.solving_time import SolvingTime
 from gyozas.run_identity import RunIdentity
+from gyozas.runner import Cell, ExperimentConfig, Method, Runner
 from gyozas.seeds import SeedTriplet
 from gyozas.solver_config import SolverConfig, available_profiles, get_profile, register_profile
 from gyozas.strates import Strate, build_strate, discover_files
@@ -81,6 +82,9 @@ __all__ = [
     "save_trajectories",
     "BranchingDirection",
     "BranchingDynamics",
+    "Cell",
+    "ExperimentConfig",
+    "Method",
     "PairedCounters",
     "CapacitatedFacilityLocationGenerator",
     "CollectionMetadata",
@@ -123,6 +127,7 @@ __all__ = [
     "quantiles",
     "register_profile",
     "RunIdentity",
+    "Runner",
     "save_table",
     "accuracy_at_1",
     "shifted_geometric_mean",

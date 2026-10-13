@@ -35,9 +35,13 @@ class RunIdentity:
         method: str,
         solver_config: SolverConfig,
         seeds: SeedTriplet,
-        manifest: InstanceManifest,
+        manifest: InstanceManifest | None = None,
     ) -> "RunIdentity":
-        """Snapshot the identity of a run about to start; versions are read live."""
+        """Snapshot the identity of a run about to start; versions are read live.
+
+        ``manifest`` is the strate's signed :class:`~gyozas.manifest.InstanceManifest`;
+        runs on ad-hoc instance directories record an empty manifest hash instead.
+        """
         model = pyscipopt.Model()
         scip_version = model.version()
         model.freeProb()
@@ -48,7 +52,7 @@ class RunIdentity:
             scip_version=scip_version,
             pyscipopt_version=pyscipopt.__version__,
             gyozas_version=_gyozas_version,
-            manifest_hash=manifest.hash,
+            manifest_hash=manifest.hash if manifest is not None else "",
         )
 
     def to_dict(self) -> dict[str, Any]:
