@@ -67,8 +67,8 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 ## R9 — Ingénierie et périmètre
 
 - **R9.1** ✅ Python, packaging **PyPI** (l'ambition GYOZAS), dépendances épinglées ; outillage préféré `uv`. *(note GYOZAS, préférences)*
-- **R9.2** ⚪ Tests : unitaires sur chaque vue du contrat d'état (R1.2) et le comptage apparié (R1.4) ; intégration **bout-en-bout sur une micro-grille** (une petite famille × pscost × 1 graine, quelques minutes) en CI — c'est le détecteur de régression du harnais. *(convention d'ingénierie)*
-- **R9.3** 🟡 Documentation avec exemples une-page (« évaluer une politique en une ligne ») ; ReadTheDocs visé à la publication PyPI. *(note GYOZAS, promotion)*
+- **R9.2** ✅ Tests : unitaires sur chaque vue du contrat d'état (R1.2) et le comptage apparié (R1.4) ; intégration **bout-en-bout sur une micro-grille** (une petite famille × pscost × 1 graine, quelques minutes) en CI — c'est le détecteur de régression du harnais. *(convention d'ingénierie)*
+- **R9.3** ✅ Documentation avec exemples une-page (« évaluer une politique en une ligne ») ; ReadTheDocs visé à la publication PyPI. *(note GYOZAS, promotion)*
 - **R9.4** ✅ *(extension)* L'API d'environnement reste gym-like : le branching est le premier environnement, pas le dernier — les autres CO environments (cadre InferOpt/Frank-Wolfe de la thèse) doivent pouvoir s'ajouter sans réécrire le harnais. *(note GYOZAS, cadre InferOpt)*
 
 ## Non-goals explicites (ce que le harnais ne fait pas)
