@@ -61,7 +61,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 ## R8 — Reproductibilité et gel de protocole
 
 - **R8.1** ✅ Identité complète de chaque run enregistrée (`RunIdentity.capture` : méthode + config exacte du solveur, triplet de graines, version de SCIP, version pyscipopt, version du harnais, hash du manifeste d'instances). Un lecteur du papier peut re-jouer un chiffre sans ambiguïté. *(spéc. §8 « publication des graines et configs exactes — c'est l'objet »)*
-- **R8.2** 🔴 **Gel G2** : release de données v0 + document de protocole figé ; après gel, tous les résultats passent par le même pipeline sans renégociation (garde-fou anti p-hacking, techniquement forcé par le manifeste). *(roadmap G2)*
+- **R8.2** ✅ **Gel G2** : release de données v0 + document de protocole figé ; après gel, tous les résultats passent par le même pipeline sans renégociation (garde-fou anti p-hacking, techniquement forcé par le manifeste). *(roadmap G2)* — mécanisme signé en place (`ProtocolSnapshot.capture/save/check_run`) ; le gel effectif reste une décision du projet.
 - **R8.3** ✅ Les artefacts publiables (code, données, graines, configs) sont des sorties naturelles du pipeline, pas un travail de fin de projet séparé. *(roadmap phase 6)*
 
 ## R9 — Ingénierie et périmètre

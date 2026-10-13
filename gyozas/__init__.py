@@ -56,6 +56,7 @@ from gyozas.metrics import (
 from gyozas.observations import NodeBipartite, NodeBipartiteEcole, NodeBipartiteSCIP, SolverStats
 from gyozas.observations.meta_observation import MetaObservation
 from gyozas.policy import CallablePolicy, Policy
+from gyozas.protocol import ProtocolSnapshot
 from gyozas.rewards.done import Done
 from gyozas.rewards.integral_bound import DualIntegral, PrimalDualIntegral, PrimalIntegral
 from gyozas.rewards.lp_iterations import LPIterations
@@ -122,6 +123,7 @@ __all__ = [
     "NodeSelectionDynamics",
     "PrimalDualIntegral",
     "PrimalIntegral",
+    "ProtocolSnapshot",
     "SetCoverGenerator",
     "SeedTriplet",
     "SolvingTime",
