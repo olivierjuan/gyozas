@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from gyozas.experts import RelpscostExpert
+from gyozas.fidelity import FidelityProfile, get_fidelity_profile, register_fidelity_profile
 from gyozas.policy import CallablePolicy
 from gyozas.runner import MIN_SEEDS, Cell, ExperimentConfig, Method, Runner
 from gyozas.strates import build_strate
@@ -165,3 +167,67 @@ class TestPublishGuard:
         assert set(results) == {"0", "1", "2", "3", "4"}
         assert set(results["0"]) == {"tiny_a", "tiny_b"}
         assert "solved" in results["0"]["tiny_a"]
+
+
+class TestFidelityProfiles:
+    def test_profile_recharges_observation_params_and_augmentation(self, tmp_path, micro_strate):
+        calls = []
+
+        def observation():
+            calls.append("obs")
+            return None
+
+        profile = FidelityProfile(
+            name="fake",
+            observation=observation,
+            scip_params={"display/verblevel": 0},
+            training={"loss": "fake", "schedule": "none"},
+        )
+        register_fidelity_profile(profile)
+        config = ExperimentConfig(
+            cells=[Cell(method="f", strate="micro", split="train", seeds=list(range(5)), budget={"limits/nodes": 20})]
+        )
+        runner = Runner(
+            config,
+            {"f": Method(name="f", policy=lambda: CallablePolicy(lambda obs, a: a[0]), fidelity="fake")},
+            {"micro": micro_strate},
+            tmp_path / "results-fidelity",
+        )
+        runner.run()
+        assert calls  # the profile's observation factory was used
+        record = json.loads(next((tmp_path / "results-fidelity").rglob("tiny_a.json")).read_text())
+        assert record["cell"]["fidelity"] == "fake"
+        assert record["cell"]["budget"]["limits/nodes"] == 20
+
+    def test_profile_expert_drives_the_episode(self, tmp_path, micro_strate):
+        register_fidelity_profile(FidelityProfile(name="relpscost", expert=RelpscostExpert))
+        config = ExperimentConfig(
+            cells=[Cell(method="e", strate="micro", split="train", seeds=list(range(5)), budget={"limits/nodes": 20})]
+        )
+        runner = Runner(
+            config,
+            {"e": Method(name="e", fidelity="relpscost", config={"kind": "expert"})},
+            {"micro": micro_strate},
+            tmp_path / "results-expert",
+        )
+        runner.run()
+        record = json.loads(next((tmp_path / "results-expert").rglob("tiny_a.json")).read_text())
+        assert record["complete"] is True
+        assert record["result"]["steps"] >= 0
+
+    def test_method_without_policy_nor_expert_is_rejected(self, tmp_path, micro_strate):
+        config = ExperimentConfig(
+            cells=[Cell(method="x", strate="micro", split="train", seeds=list(range(5)))]
+        )
+        runner = Runner(
+            config,
+            {"x": Method(name="x")},
+            {"micro": micro_strate},
+            tmp_path / "results-none",
+        )
+        with pytest.raises(ValueError, match="neither a policy"):
+            runner.run()
+
+    def test_unknown_fidelity_profile_is_rejected(self):
+        with pytest.raises(KeyError, match="nope"):
+            get_fidelity_profile("nope")

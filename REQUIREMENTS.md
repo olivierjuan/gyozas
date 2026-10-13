@@ -41,7 +41,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 - **R5.1** ✅ Runner piloté par config : un fichier décrit méthode × strate × graine × version de solveur ; un run terminé est idempotent (relancer = no-op), un run interrompu reprend. *(roadmap phase 3 — quelques centaines de runs)*
 - **R5.2** ✅ La graine minimale du protocole (5) est vérifiée par le harnais : une cellule incomplète ne produit pas de résultat publiant. *(spéc. §2, §8)*
 - **R5.3** ✅ Orchestration batchée séquencable sur les moyens du labo (runs GPU ~1 h sur les difficiles, × 5 graines × 6–8 méthodes × 3 strates), avec reprise après incident. *(spéc. §6 coût, roadmap phase 3)*
-- **R5.4** 🔴 **Profils de fidélité native** (piste B) : par méthode, un profil activable qui recharge son régime d'origine — features, expert, augmentation, et les spécificités de loss/entraînement (lissage 2e choix + PAT de Lookback, H3 + Optuna imbriqué de TGPPO, pré-entraînement contrastif + inférence autoregressive de Mamba, BiMatching de T-BranT…). La checklist §3 de la spécification est exécutable, pas documentaire. *(checklist §3)*
+- **R5.4** 🟡 **Profils de fidélité native** (piste B) : par méthode, un profil activable qui recharge son régime d'origine — features, expert, augmentation, et les spécificités de loss/entraînement (lissage 2e choix + PAT de Lookback, H3 + Optuna imbriqué de TGPPO, pré-entraînement contrastif + inférence autoregressive de Mamba, BiMatching de T-BranT…). La checklist §3 de la spécification est exécutable, pas documentaire. *(checklist §3)* — mécanisme activable en place (`FidelityProfile` + registre + câblage runner, spécificités d'entraînement enregistrées mais non exécutées) ; les régimes documentés restent à fournir.
 
 ## R6 — Évaluation
 

@@ -21,6 +21,12 @@ from gyozas.dynamics.node_selection import NodeSelectionDynamics
 from gyozas.environment import Environment
 from gyozas.evaluation import evaluate
 from gyozas.experts import BranchingExpert, PseudocostExpert, RelpscostExpert, ScoreExpert, StrongBranchingExpert
+from gyozas.fidelity import (
+    FidelityProfile,
+    available_fidelity_profiles,
+    get_fidelity_profile,
+    register_fidelity_profile,
+)
 from gyozas.gymnasium_wrapper import GymnasiumWrapper
 from gyozas.informations.empty import Empty
 from gyozas.informations.solve_status import SolveStatus
@@ -95,6 +101,10 @@ __all__ = [
     "Dynamics",
     "Empty",
     "Environment",
+    "FidelityProfile",
+    "available_fidelity_profiles",
+    "get_fidelity_profile",
+    "register_fidelity_profile",
     "evaluate",
     "ExtraBranchingActions",
     "FileGenerator",

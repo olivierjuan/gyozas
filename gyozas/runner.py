@@ -30,7 +30,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .dynamics.branching import BranchingDynamics, ExtraBranchingActions
 from .environment import Environment
+from .fidelity import get_fidelity_profile
 from .informations.solve_status import SolveStatus
 from .instances.files import FileGenerator
 from .manifest import InstanceManifest
@@ -44,6 +46,27 @@ from .solver_config import SolverConfig, get_profile
 MIN_SEEDS = 5
 
 
+class _ExpertDrivenObservation:
+    """Observation function that also resets a fidelity expert with each new model.
+
+    A fidelity expert decides on the live model (``expert.select(model, ...)``),
+    so it must receive every new episode's model through the observation hook —
+    the one place the harness touches the model before the solve starts.
+    """
+
+    def __init__(self, expert: Any, inner: Any | None) -> None:
+        self._expert = expert
+        self._inner = inner
+
+    def reset(self, model: Any) -> None:
+        if self._inner is not None:
+            self._inner.reset(model)
+        self._expert.reset(model)
+
+    def extract(self, model: Any, done: bool) -> Any:
+        return self._inner.extract(model, done) if self._inner is not None else None
+
+
 @dataclass
 class Method:
     """One benchmark method: a policy factory plus the observation it declares.
@@ -53,18 +76,25 @@ class Method:
     name:
         The method's identifier in the experiment grid.
     policy:
-        Factory returning a fresh :class:`~gyozas.policy.Policy` per run.
+        Factory returning a fresh :class:`~gyozas.policy.Policy` per run. May
+        be ``None`` when a fidelity profile with an expert is declared — the
+        expert then drives the solver.
     observation:
         Factory returning the observation function the policy consumes, or
         ``None`` for the default (solver-stats-free) observation.
     config:
         Method configuration, embedded in every run record (R8.1/R8.3).
+    fidelity:
+        Optional name of a registered :class:`~gyozas.fidelity.FidelityProfile`
+        (R5.4): the method's native regime — observation, expert, augmentation,
+        solver parameters — is recharged for the run.
     """
 
     name: str
-    policy: Callable[[], Policy]
+    policy: Callable[[], Policy] | None = None
     observation: Callable[[], Any] | None = None
     config: dict[str, Any] = field(default_factory=dict)
+    fidelity: str | None = None
 
 
 @dataclass
@@ -248,33 +278,64 @@ class Runner:
             raise FileNotFoundError(f"no instance files in {split_dir}")
         return [(p.name.removesuffix(".mps.gz").removesuffix(".mps").removesuffix(".lp"), p) for p in files]
 
-    def _scip_params(self, cell: Cell) -> dict[str, Any]:
-        """Profile parameters (if any) overlaid with the cell's budget."""
-        params = dict(get_profile(cell.profile).params) if cell.profile is not None else {}
+    def _scip_params(self, cell: Cell, method: Method | None = None) -> dict[str, Any]:
+        """Fidelity and solver-profile parameters, overlaid with the cell's budget."""
+        params: dict[str, Any] = {}
+        if method is not None and method.fidelity is not None:
+            params.update(get_fidelity_profile(method.fidelity).scip_params)
+        if cell.profile is not None:
+            params.update(get_profile(cell.profile).params)
         params.update(cell.budget)
         return params
 
+    def _policy_for(self, method: Method, env: Environment, expert: Any | None) -> Callable[[Any, Any], int]:
+        """Resolve the method's decision function for one episode."""
+        if method.policy is not None:
+            return method.policy().select_action
+        if expert is not None:
+
+            def decide(_obs, action_set):
+                action = expert.select(env.model, action_set)
+                return int(action) if action is not None else int(ExtraBranchingActions.SKIP)
+
+            return decide
+        raise ValueError(f"method {method.name!r} declares neither a policy nor a fidelity profile with an expert")
+
     def _run_one(self, cell: Cell, seed: int, instance: str, path: Path) -> dict[str, Any]:
         method = self.methods[cell.method]
+        profile = get_fidelity_profile(method.fidelity) if method.fidelity is not None else None
+        augmentation = profile.augmentation() if profile is not None and profile.augmentation is not None else None
+        expert = profile.expert() if profile is not None and method.policy is None else None
+        extra_actions = [ExtraBranchingActions.SKIP] if expert is not None else None
+        observation = None
+        if method.observation is not None:
+            observation = method.observation()
+        elif profile is not None and profile.observation is not None:
+            observation = profile.observation()
+        if expert is not None:
+            # The expert is model-driven: reset it on each new model through the
+            # observation hook, before the solve thread starts consuming decisions.
+            observation = _ExpertDrivenObservation(expert, observation)
         triplet = SeedTriplet.from_base_seed(seed)
         triplet.seed_python()
-        policy = method.policy()
         generator = FileGenerator(directory=path.parent, pattern=path.name, sampling_mode="replace", rng=triplet.python)
         env = Environment(
             instance_generator=generator,
-            observation_function=method.observation() if method.observation else None,
+            observation_function=observation,
             reward_function=self.reward_factory() if self.reward_factory else None,
             information_function=SolveStatus(),
-            scip_params=self._scip_params(cell),
+            scip_params=self._scip_params(cell, method),
+            dynamics=BranchingDynamics(augmentation=augmentation, with_extra_actions=extra_actions),
         )
         try:
             env.seed(triplet.solver)
+            policy = self._policy_for(method, env, expert)
             total_reward = 0.0
             obs, action_set, reward, done, info = env.reset()
             total_reward += reward
             steps = 0
             while not done:
-                action = policy.select_action(obs, action_set)
+                action = policy(obs, action_set)
                 obs, action_set, reward, done, info = env.step(action)
                 total_reward += reward
                 steps += 1
@@ -287,10 +348,11 @@ class Runner:
                     "profile": cell.profile,
                     "budget": dict(cell.budget),
                     "method_config": dict(method.config),
+                    "fidelity": method.fidelity,
                 },
                 "seed": {"base": seed, "triplet": triplet.to_dict()},
                 "instance": instance,
-                "run_identity": self._identity(cell, triplet).to_dict(),
+                "run_identity": self._identity(cell, method, triplet).to_dict(),
                 "result": {
                     "status": info.get("status"),
                     "solved": info.get("solved"),
@@ -305,11 +367,11 @@ class Runner:
         finally:
             env.close()
 
-    def _identity(self, cell: Cell, triplet: SeedTriplet) -> RunIdentity:
+    def _identity(self, cell: Cell, method: Method, triplet: SeedTriplet) -> RunIdentity:
         profile = get_profile(cell.profile) if cell.profile is not None else get_profile("default")
         solver_config = SolverConfig(
             name=f"{profile.name}+budget" if cell.budget else profile.name,
-            params=self._scip_params(cell),
+            params=self._scip_params(cell, method),
         )
         return RunIdentity.capture(
             method=f"{cell.method}:{cell.strate}/{cell.split}",
