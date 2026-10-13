@@ -78,7 +78,8 @@ class Method:
     policy:
         Factory returning a fresh :class:`~gyozas.policy.Policy` per run. May
         be ``None`` when a fidelity profile with an expert is declared — the
-        expert then drives the solver.
+        expert then drives the solver — or for the default-solver baseline
+        (R6.1), where every decision is handed back to SCIP's own rule.
     observation:
         Factory returning the observation function the policy consumes, or
         ``None`` for the default (solver-stats-free) observation.
@@ -299,14 +300,20 @@ class Runner:
                 return int(action) if action is not None else int(ExtraBranchingActions.SKIP)
 
             return decide
-        raise ValueError(f"method {method.name!r} declares neither a policy nor a fidelity profile with an expert")
+        # Neither a policy nor an expert: the default-solver baseline (R6.1) —
+        # every decision is handed back to SCIP's own branching rule.
+        return lambda _obs, _action_set: int(ExtraBranchingActions.SKIP)
 
     def _run_one(self, cell: Cell, seed: int, instance: str, path: Path) -> dict[str, Any]:
         method = self.methods[cell.method]
         profile = get_fidelity_profile(method.fidelity) if method.fidelity is not None else None
         augmentation = profile.augmentation() if profile is not None and profile.augmentation is not None else None
         expert = profile.expert() if profile is not None and method.policy is None else None
-        extra_actions = [ExtraBranchingActions.SKIP] if expert is not None else None
+        # The experts and the default-solver baseline (R6.1) both express
+        # "SCIP decides" as the SKIP action, which the action set must carry.
+        extra_actions = (
+            [ExtraBranchingActions.SKIP] if expert is not None or method.policy is None else None
+        )
         observation = None
         if method.observation is not None:
             observation = method.observation()

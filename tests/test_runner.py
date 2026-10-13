@@ -169,6 +169,33 @@ class TestPublishGuard:
         assert "solved" in results["0"]["tiny_a"]
 
 
+class TestDefaultSolverBaseline:
+    def test_method_without_policy_or_expert_runs_the_default_solver(self, tmp_path, micro_strate):
+        """A bare Method is the default-solver baseline (R6.1): SCIP decides."""
+        config = ExperimentConfig(
+            cells=[
+                Cell(
+                    method="default",
+                    strate="micro",
+                    split="train",
+                    seeds=list(range(5)),
+                    profile="default",
+                    budget={"limits/nodes": 20, "display/verblevel": 0},
+                )
+            ]
+        )
+        runner = Runner(config, {"default": Method(name="default")}, {"micro": micro_strate}, tmp_path / "results")
+        report = runner.run()
+        assert report["default/micro/train"]["executed"] == 10
+        records = list((tmp_path / "results" / "default").rglob("*.json"))
+        assert len(records) == 10
+        assert all(json.loads(r.read_text())["complete"] for r in records)
+        # SCIP decided everything: no policy, no expert in the identity.
+        record = json.loads(records[0].read_text())
+        assert record["result"]["solved"] is True
+        assert record["cell"]["method_config"] == {}
+
+
 class TestFidelityProfiles:
     def test_profile_recharges_observation_params_and_augmentation(self, tmp_path, micro_strate):
         calls = []
@@ -214,19 +241,6 @@ class TestFidelityProfiles:
         record = json.loads(next((tmp_path / "results-expert").rglob("tiny_a.json")).read_text())
         assert record["complete"] is True
         assert record["result"]["steps"] >= 0
-
-    def test_method_without_policy_nor_expert_is_rejected(self, tmp_path, micro_strate):
-        config = ExperimentConfig(
-            cells=[Cell(method="x", strate="micro", split="train", seeds=list(range(5)))]
-        )
-        runner = Runner(
-            config,
-            {"x": Method(name="x")},
-            {"micro": micro_strate},
-            tmp_path / "results-none",
-        )
-        with pytest.raises(ValueError, match="neither a policy"):
-            runner.run()
 
     def test_unknown_fidelity_profile_is_rejected(self):
         with pytest.raises(KeyError, match="nope"):
