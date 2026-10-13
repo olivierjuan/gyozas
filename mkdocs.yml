@@ -70,6 +70,7 @@ nav:
     - Branching Agent: examples/branching.md
     - Node Selection Agent: examples/node-selection.md
   - Migrating from Ecole: migrating-from-ecole.md
+  - References: references.md
   - API Reference:
     - Environment: api/environment.md
     - Gymnasium Wrapper: api/gymnasium-wrapper.md
