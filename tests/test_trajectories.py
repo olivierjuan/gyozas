@@ -118,7 +118,14 @@ class TestRetrospectiveTrajectories:
             # Each trajectory ends with done=True and holds the root as first state.
             for trajectory in trajectories:
                 assert trajectory.dones[-1] is True
-                assert "action" in trajectory.observations[0] or len(trajectory.observations) >= 1
+                # The four lists stay aligned per step, including for the
+                # episode-final visited node that has no recorded action.
+                assert (
+                    len(trajectory.observations)
+                    == len(trajectory.actions)
+                    == len(trajectory.rewards)
+                    == len(trajectory.dones)
+                )
         finally:
             env.close()
 

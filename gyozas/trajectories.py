@@ -86,26 +86,22 @@ def retrospective_trajectories(branching_tree) -> list[Trajectory]:
         for node_id in path:
             data = tree.nodes[node_id]
             has_decision = "action" in data
-            trajectory.observations.append(data)
+            observation = {k: v for k, v in data.items() if k not in ("action", "reward")}
+            trajectory.observations.append(observation)
             if has_decision:
                 trajectory.actions.append(data["action"])
                 trajectory.rewards.append(float(data["reward"]))
                 trajectory.dones.append(False)
-            elif node_id == visited_node:
-                trajectory.dones.append(True)
             else:
+                # The episode-final visited node has no recorded action/reward
+                # (Environment.step only records them when not done); pad so
+                # the four lists stay aligned per step.
                 trajectory.actions.append(None)
                 trajectory.rewards.append(0.0)
-                trajectory.dones.append(False)
+                trajectory.dones.append(node_id == visited_node)
         trajectory.dones[-1] = True
         trajectories.append(trajectory)
     return trajectories
-
-
-def nx_shortest_path(tree, source, target) -> list:
-    import networkx as nx
-
-    return nx.shortest_path(tree, source, target)
 
 
 class TrajectoryRecorder:
