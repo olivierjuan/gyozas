@@ -27,6 +27,7 @@ from gyozas.fidelity import (
     get_fidelity_profile,
     register_fidelity_profile,
 )
+from gyozas.fidelity_profiles import register_documented_profiles
 from gyozas.gymnasium_wrapper import GymnasiumWrapper
 from gyozas.informations.empty import Empty
 from gyozas.informations.solve_status import SolveStatus
@@ -74,6 +75,8 @@ from gyozas.trajectories import (
     retrospective_trajectories,
     save_trajectories,
 )
+
+register_documented_profiles()
 
 __all__ = [
     "BranchingDecision",
