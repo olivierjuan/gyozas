@@ -60,9 +60,15 @@ class TestProfiles:
         model = Model()
         profile = get_profile("lin2022")
         profile.apply(model)
-        for name in profile.params:
-            if name.startswith("heuristics/"):
-                assert model.getParam(name) == -1, name
+        # Enumerate the heuristics the installed SCIP actually ships (not the
+        # profile's own table): a heuristic missing from the profile would
+        # otherwise stay enabled by default, silently reintroducing primal
+        # search (adaptivediving in particular reruns disabled divesets).
+        heuristics = [p for p in model.getParams() if p.startswith("heuristics/") and p.endswith("/freq")]
+        assert len(heuristics) >= 54
+        for name in heuristics:
+            assert model.getParam(name) == -1, name
+        model.freeProb()
 
     def test_apply_with_cutoff_sets_objlimit(self):
         profile = SolverConfig(name="cutoff-test", params={"display/verblevel": 0})

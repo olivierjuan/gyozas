@@ -73,8 +73,14 @@ register_profile(SolverConfig(name="default", params={}))
 # strong-branching auxiliaries off (conflict analysis, probing bounds, solution
 # checks, reevaluation age), presolve and cuts left at SCIP defaults. The cutoff
 # at the known optimum is instance-dependent: pass it to apply(cutoff=...).
+#
+# The heuristic list is TBranT's (SCIP 6.0.1) extended with the heuristics that
+# exist in newer SCIP and are enabled by default there — notably adaptivediving,
+# which reruns the divesets of the diving heuristics disabled above and would
+# otherwise reintroduce primal search into the "heuristics-disabled" sandbox.
 _LIN_2022_HEURISTICS = (
     "actconsdiving",
+    "adaptivediving",
     "alns",
     "bound",
     "clique",
@@ -85,6 +91,8 @@ _LIN_2022_HEURISTICS = (
     "dins",
     "distributiondiving",
     "dualval",
+    "dks",
+    "dps",
     "farkasdiving",
     "feaspump",
     "fixandinfer",
@@ -92,6 +100,7 @@ _LIN_2022_HEURISTICS = (
     "gins",
     "guideddiving",
     "indicator",
+    "indicatordiving",
     "intdiving",
     "intshifting",
     "linesearchdiving",
@@ -106,6 +115,7 @@ _LIN_2022_HEURISTICS = (
     "octane",
     "ofins",
     "oneopt",
+    "padm",
     "proximity",
     "pscostdiving",
     "randrounding",
@@ -115,10 +125,12 @@ _LIN_2022_HEURISTICS = (
     "rins",
     "rootsoldiving",
     "rounding",
+    "scheduler",
     "shiftandpropagate",
     "shifting",
     "simplerounding",
     "subnlp",
+    "trustregion",
     "trivial",
     "trivialnegation",
     "trysol",
