@@ -1,7 +1,9 @@
 
 # Harnais GYOZAS — liste d'exigences
 
-Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch unifié|roadmap du benchmark unifié]] (jalons G1/G2), c'est-à-dire ce que la librairie [[GYOZAS]] doit faire pour porter le benchmark. Chaque exigence est traçable à son origine dans la spécification. Les exigences R1–R9 sont *toutes* motrices pour G1, sauf mention contraire ; les exigences d'extension (EDF, Niveau 2) sont notées « extension ».
+Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch unifié|roadmap du benchmark unifié]] (jalons G1/G2), c'est-à-dire ce que la librairie [[GYOZAS]] doit faire pour porter le benchmark. Chaque exigence est traçable à son origine dans la spécification.
+
+**Périmètre — harnais, pas benchmark.** GYOZAS est le *harnais* : la librairie PyPI qui fournit les mécanismes ci-dessous. Le benchmark lui-même — le protocole gelé (G2), les données de strate et leurs manifestes signés, les grilles d'expériences, le code d'entraînement et les checkpoints des huit méthodes, les résultats et les artefacts du papier — vit dans un **dépôt séparé qui dépend de GYOZAS**. Chaque exigence se lit donc comme « ce que GYOZAS doit fournir pour que le dépôt du benchmark puisse le faire » ; ce qui relève du dépôt du benchmark est noté au fil du texte. Les exigences R1–R9 sont *toutes* motrices pour G1, sauf mention contraire ; les exigences d'extension (EDF, Niveau 2) sont notées « extension ».
 
 **État au 13/10/2026** — validation de l'installation inspectée sur Selena (`/scratch/rd/turing/olivier/TreeRope/.venv`, gyozas 1.0.0, pyscipopt 6.2.1 unique, gymnasium 1.3.0) : ✅ déjà respecté · 🟡 partiel · 🔴 absent · ⚪ inconclusif (wheel installé, pas la source). Synthèse : l'ossature est en place et au-delà du requis sur le socle (contrat d'adaptateur, callbacks, rewards intégraux, API générique à 4 environments) ; les trous majeurs se regroupent en cinq chantiers — dual SCIP (R2.1), vue solver-stats + décision typée (R1.2b/R1.4), volet données/splits/manifeste (R3), collecte d'expert et augmentation (R4), volet évaluation/runner/statistiques/identité de run (R5/R7/R8, partiellement reportable au niveau TreeRope où snakemake est déjà installé).
 
@@ -24,7 +26,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 ## R3 — Instances, strates, splits
 
-- **R3.1** ✅ Les trois strates du tronc universel embarquées comme données : familles Ecole synthétiques (setcover/cauctions/indset/facilities, faciles + medium), MIPLIB-S (les 27 de TreeGate), MILP-L (les 73 de Mamba, 57 faciles / 16 difficiles). *(spéc. §2 piste A)*
+- **R3.1** ✅ Les trois strates du tronc universel embarquées comme données : familles Ecole synthétiques (setcover/cauctions/indset/facilities, faciles + medium), MIPLIB-S (les 27 de TreeGate), MILP-L (les 73 de Mamba, 57 faciles / 16 difficiles). GYOZAS fournit les générateurs synthétiques et le mécanisme de strate ; les fichiers d'instances et leurs manifestes signés sont les *données du protocole* — vocation : le dépôt du benchmark (actuellement dans ce repo en attendant sa création). *(spéc. §2 piste A)*
 - **R3.2** ✅ Les splits train/test d'origine **respectés à l'identique** : ils sont embarqués dans les données de strate, jamais reconstruits par le harnais (fuite impossible, comparabilité directe aux publications). *(spéc. §2 piste A)*
 - **R3.3** ✅ Accès par clé (strate, split, instance) avec **manifeste signé** (`InstanceManifest` : SHA-256 de chaque instance, comptage par strate/split, provenance, hash de contenu du manifeste = signature) ; `verify` détecte toute altération. Le manifeste est l'unité de gel du protocole (G2). *(roadmap phase 2 / G2)*
 - **R3.4** 🟡 *(extension)* Ajout de strates sans refactor : strate pilote EDF issue de `n_campagne_adonis` (hétérogénéité extrême, étiquette de difficulté candidate = écart prévu/réalisé) ; Distributional MIPLIB si elle sort comme bibliothèque de distributions. *(spéc. §6 cadrage CIFRE, bilan OpenReview)*
@@ -48,7 +50,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 - **R6.1** ✅ Run B&B complet avec la politique branchée, contre les baselines classiques (pscost, relpscost, SB borné) sur les **mêmes instances et graines** ; la baseline solveur par défaut est l'unité 1.000×. *(spéc. §2 piste A ; description TreeRoPE)*
 - **R6.2** ✅ Unités appariées **par instance** (`paired_per_instance_ratios`, `sgm_of_ratios`) : SGM des nœuds par instance, jamais moyennes transverses de décisions ni agrégats qui masquent l'hétérogénéité des échelles entre instances. *(spéc. §5.2)*
 - **R6.3** ✅ **Comptage d'instances résolues à la limite** (`solved_vs_truncated`) comme métrique primaire sur les strates difficiles (la leçon TreeRoPE : le classement peut s'inverser une fois les tronquées sorties) ; SGM calculée sur résolues seulement ; PD integral pour la progression du primal gap en temps (`PrimalIntegral`). *(spéc. §5.3)*
-- **R6.4** 🔴 (Réservée à la comparaison GCNN+SB natif vs GCNN+relpscost sur les synthétiques — la mesure du *coût du passage à l'expert scalable*, chiffrée une fois pour toute la littérature.) *(spéc. §2 piste B, comparaison 1)*
+- **R6.4** 🔴 (Réservée à la comparaison GCNN+SB natif vs GCNN+relpscost sur les synthétiques — la mesure du *coût du passage à l'expert scalable*, chiffrée une fois pour toute la littérature. Expérience du dépôt du benchmark : exécutable avec le harnais — `evaluate` + deux profils de fidélité sur les synthétiques.) *(spéc. §2 piste B, comparaison 1)*
 
 ## R7 — Métriques et statistique
 
@@ -73,6 +75,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 ## Non-goals explicites (ce que le harnais ne fait pas)
 
+- **N'est pas le benchmark** : GYOZAS fournit les mécanismes ; le protocole gelé, les données de strate, l'entraînement des méthodes, les grilles d'expériences et les résultats appartiennent au dépôt du benchmark, qui dépend de GYOZAS.
 - **N'impose ni features uniques, ni expert unique, ni architecture** : la comparabilité porte sur les instances, le solveur, les graines et les métriques — jamais sur l'intérieur du modèle (c'est la ligne de partage piste A / piste B).
 - **N'est pas un benchmark de générateurs d'instances** (c'est GenBench-MILP) ni une bibliothèque de distributions (c'est Distributional MIPLIB) — il peut les *consommer*, il ne les remplace pas.
 - **Ne fixe pas le classement des versions de SCIP** : la dualité 6.0.1/8.0.4 est un facteur étudié (§4), pas une préférence.
