@@ -45,7 +45,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 ## R6 — Évaluation
 
-- **R6.1** 🟡 Run B&B complet avec la politique branchée, contre les baselines classiques (pscost, relpscost, SB borné) sur les **mêmes instances et graines** ; la baseline solveur par défaut est l'unité 1.000×. *(spéc. §2 piste A ; description TreeRoPE)*
+- **R6.1** ✅ Run B&B complet avec la politique branchée, contre les baselines classiques (pscost, relpscost, SB borné) sur les **mêmes instances et graines** ; la baseline solveur par défaut est l'unité 1.000×. *(spéc. §2 piste A ; description TreeRoPE)*
 - **R6.2** ✅ Unités appariées **par instance** (`paired_per_instance_ratios`, `sgm_of_ratios`) : SGM des nœuds par instance, jamais moyennes transverses de décisions ni agrégats qui masquent l'hétérogénéité des échelles entre instances. *(spéc. §5.2)*
 - **R6.3** ✅ **Comptage d'instances résolues à la limite** (`solved_vs_truncated`) comme métrique primaire sur les strates difficiles (la leçon TreeRoPE : le classement peut s'inverser une fois les tronquées sorties) ; SGM calculée sur résolues seulement ; PD integral pour la progression du primal gap en temps (`PrimalIntegral`). *(spéc. §5.3)*
 - **R6.4** 🔴 (Réservée à la comparaison GCNN+SB natif vs GCNN+relpscost sur les synthétiques — la mesure du *coût du passage à l'expert scalable*, chiffrée une fois pour toute la littérature.) *(spéc. §2 piste B, comparaison 1)*

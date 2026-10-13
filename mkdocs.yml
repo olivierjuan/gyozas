@@ -75,6 +75,7 @@ nav:
     - Gymnasium Wrapper: api/gymnasium-wrapper.md
     - Policy Interface: api/policy.md
     - Experiment Runner: api/runner.md
+    - Evaluation: api/evaluation.md
     - Dynamics: api/dynamics.md
     - Rewards: api/rewards.md
     - Observations: api/observations.md
