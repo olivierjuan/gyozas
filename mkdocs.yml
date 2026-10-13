@@ -73,12 +73,14 @@ nav:
   - API Reference:
     - Environment: api/environment.md
     - Gymnasium Wrapper: api/gymnasium-wrapper.md
+    - Policy Interface: api/policy.md
     - Dynamics: api/dynamics.md
     - Rewards: api/rewards.md
     - Observations: api/observations.md
     - Information Functions: api/informations.md
     - Instance Generators: api/instances.md
     - Instance Manifest: api/manifest.md
+    - Benchmark Strates: api/strates.md
     - Run Identity: api/run-identity.md
     - Instance Modifiers: api/modifiers.md
     - Solver Configuration: api/solver-config.md

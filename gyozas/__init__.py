@@ -48,6 +48,7 @@ from gyozas.metrics import (
 )
 from gyozas.observations import NodeBipartite, NodeBipartiteEcole, NodeBipartiteSCIP, SolverStats
 from gyozas.observations.meta_observation import MetaObservation
+from gyozas.policy import CallablePolicy, Policy
 from gyozas.rewards.done import Done
 from gyozas.rewards.integral_bound import DualIntegral, PrimalDualIntegral, PrimalIntegral
 from gyozas.rewards.lp_iterations import LPIterations
@@ -117,11 +118,14 @@ __all__ = [
     "file_hash",
     "get_profile",
     "paired_per_instance_ratios",
+    "CallablePolicy",
+    "Policy",
     "quantiles",
     "register_profile",
     "RunIdentity",
     "save_table",
     "accuracy_at_1",
+    "shifted_geometric_mean",
     "solved_vs_truncated",
     "sgm_of_ratios",
     "Strate",

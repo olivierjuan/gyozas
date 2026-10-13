@@ -7,11 +7,11 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 ## R1 — Contrat de politique (l'abstraction d'adaptateur)
 
-- **R1.1** 🟡 Interface unique de politique, en aval du solveur : toute méthode expose une fonction de décision du type `select_branching_decision(state) -> BranchingDecision` ; le harnais pilote le solveur, jamais l'inverse. *(spéc. §6 — « l'abstraction d'adaptateur est le point où brancher des politiques hétérogènes »)*
+- **R1.1** ✅ Interface unique de politique, en aval du solveur : toute méthode expose une fonction de décision du type `select_branching_decision(state) -> BranchingDecision` ; le harnais pilote le solveur, jamais l'inverse. *(spéc. §6 — « l'abstraction d'adaptateur est le point où brancher des politiques hétérogènes »)*
 - **R1.2** ✅ Contrat d'état à **trois vues** sur le même nœud, chacune optionnelle : (a) `BipartiteState` — graphe LP complet (Gasse, Lookback, RetroBranching, Scavuzzo) ; (b) état solver-stats — ~25–100 scalaires nœud + arbre (`SolverStats`, TreeGate, T-BranT, TGPPO, Mamba) ; (c) état RL — observation d'environnement sans expert (RetroBranching, Scavuzzo, TGPPO). Un jeu de features unique priverait quelqu'un : les trois coexistent. *(spéc. §2 piste A « chaque méthode garde ses features natives », §1.1)*
 - **R1.3** ✅ Extraction **pay-per-view** : les features solveur sont O(1) par nœud ; le graphe LP complet n'est extrait que si la politique le déclare (son extraction est coûteuse sur les grosses instances). *(spéc. §1.1)*
 - **R1.4** ✅ Décision typée (`BranchingDecision` : variable × direction) avec compteurs **appariés** (`PairedCounters`) : décisions et nœuds comptés séparément, asymétrie ~1,84–2,00× documentée dans le contrat (jamais mélangées dans une agrégation). *(description TreeRoPE, piège 2 ; spéc. §5.2)*
-- **R1.5** 🟡 Une nouvelle politique = une classe + une config ; zéro modification du harnais. C'est la matérialisation de l'argument d'adoption « une ligne pour évaluer une nouvelle politique ». *(spéc. §6)*
+- **R1.5** ✅ Une nouvelle politique = une classe + une config ; zéro modification du harnais. C'est la matérialisation de l'argument d'adoption « une ligne pour évaluer une nouvelle politique ». *(spéc. §6)*
 - **R1.6** ✅ La politique peut être **architecturalement quelconque** : le harnais ne voit que l'état qu'elle a déclaré et la décision qu'elle rend — pas de présupposé GCNN, séquentiel, ou arbre entier. *(spéc. §2, checklist §3)*
 
 ## R2 — Solveur, versions, configuration
