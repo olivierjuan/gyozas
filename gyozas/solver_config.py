@@ -31,9 +31,12 @@ class SolverConfig:
         model:
             The model to configure.
         cutoff:
-            Optional objective cutoff value (prune solutions worse than this
-            bound), applied via ``setObjlimit``. Used by profiles whose protocol
-            fixes the cutoff at the known optimum (e.g. the Lin 2022 profile).
+            Optional objective cutoff value, applied via ``setObjlimit``. SCIP
+            prunes solutions at or worse than this bound, so passing the known
+            optimum makes the solve stop as soon as that value is reached
+            (status "infeasible", the optimum having been pruned). Used by
+            profiles whose protocol fixes the cutoff at the known optimum
+            (e.g. the Lin 2022 profile).
         """
         model.setParams(dict(self.params))
         if cutoff is not None:

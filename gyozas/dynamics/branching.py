@@ -59,10 +59,12 @@ class PairedCounters:
 
     Decisions and nodes are counted **separately** and must never be mixed into a
     single aggregate: a node count aggregates solver-side work while a decision
-    count aggregates policy-side work, and the two differ. On the literature's
-    reference setups the ratio ``nodes / decisions`` sits around ~1.84-2.00x
-    (auxiliary nodes are processed without a policy decision, and one decision
-    creates two children). Report both, or report the ratio explicitly.
+    count aggregates policy-side work. These two counters measure consultations
+    and applied branchings, so in a standard run ``nodes == decisions + 1`` (the
+    root is consulted, no branching is applied there) — they do *not* reproduce
+    the literature's total-tree-nodes/decisions asymmetry (~1.84-2.00x, which
+    counts auxiliary nodes processed without a policy consultation). Report both
+    counters, or the ratio explicitly and named for what it counts.
 
     Attributes
     ----------

@@ -18,7 +18,7 @@ from gyozas.dynamics.branching import (
 )
 from gyozas.dynamics.node_selection import NodeSelectionDynamics
 from gyozas.environment import Environment
-from gyozas.experts import BranchingExpert, PseudocostExpert, RelpscostExpert, StrongBranchingExpert
+from gyozas.experts import BranchingExpert, PseudocostExpert, RelpscostExpert, ScoreExpert, StrongBranchingExpert
 from gyozas.gymnasium_wrapper import GymnasiumWrapper
 from gyozas.informations.empty import Empty
 from gyozas.informations.solve_status import SolveStatus
@@ -67,6 +67,7 @@ __all__ = [
     "BranchingExpert",
     "PseudocostExpert",
     "RelpscostExpert",
+    "ScoreExpert",
     "StrongBranchingExpert",
     "Trajectory",
     "TrajectoryRecorder",
