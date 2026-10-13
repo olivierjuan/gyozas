@@ -52,7 +52,7 @@ Exigences de la **phase 1** de la [[Recherche/TreeRope/Benchmark learn2branch un
 
 ## R7 — Métriques et statistique
 
-- **R7.1** 🔴 L'acc@1 n'est **jamais rapportée seule** : toujours accompagnée de la distribution de nœuds multi-optimaux de la collection (R4.3), et jamais comparée entre experts différents. *(spéc. §5.1)*
+- **R7.1** ✅ L'acc@1 n'est **jamais rapportée seule** : toujours accompagnée de la distribution de nœuds multi-optimaux de la collection (R4.3), et jamais comparée entre experts différents. *(spéc. §5.1)*
 - **R7.2** ✅ Double reporting systématique **médiane vs queue** (`summary_table` : SGM, p50/p95, pertes catastrophiques nommées) (la leçon TGPPO : domination médiane 78,8 % et SGM agrégée pire peuvent coexister). *(spéc. §5, §1.5)*
 - **R7.3** ✅ Tests de rangs automatisés : **Friedman + Nemenyi sur les rangs intra-instance** (`friedman_nemenyi`) et **Wilcoxon apparié unilatéral avec correction de Holm** (`wilcoxon_pair`/`wilcoxon_holm`) — implémentés une fois dans la librairie, appliqués partout. *(spéc. §5, §1.5)*
 - **R7.4** ✅ Win rates head-to-head par instance entre toute paire de méthodes (`win_rate`). *(spéc. §2 piste A ; protocole TGPPO)*

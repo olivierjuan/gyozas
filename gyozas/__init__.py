@@ -32,6 +32,7 @@ from gyozas.instances.multiple_knapsack import MultipleKnapsackGenerator
 from gyozas.instances.set_cover import SetCoverGenerator
 from gyozas.manifest import InstanceManifest, file_hash
 from gyozas.metrics import (
+    accuracy_at_1,
     catastrophic_losses,
     friedman_nemenyi,
     paired_per_instance_ratios,
@@ -55,6 +56,7 @@ from gyozas.rewards.solving_time import SolvingTime
 from gyozas.run_identity import RunIdentity
 from gyozas.seeds import SeedTriplet
 from gyozas.solver_config import SolverConfig, available_profiles, get_profile, register_profile
+from gyozas.strates import Strate, build_strate, discover_files
 from gyozas.trajectories import (
     Trajectory,
     TrajectoryRecorder,
@@ -119,9 +121,12 @@ __all__ = [
     "register_profile",
     "RunIdentity",
     "save_table",
-    "shifted_geometric_mean",
+    "accuracy_at_1",
     "solved_vs_truncated",
     "sgm_of_ratios",
+    "Strate",
+    "build_strate",
+    "discover_files",
     "summary_table",
     "wilcoxon_holm",
     "wilcoxon_pair",

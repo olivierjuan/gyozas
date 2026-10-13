@@ -79,6 +79,88 @@ def shifted_geometric_mean(values, shift: float = 0.0) -> float:
     return float(np.exp(np.mean(np.log(arr + shift))) - shift)
 
 
+def accuracy_at_1(
+    policy_actions,
+    expert_scores,
+    action_sets,
+    *,
+    collection,
+    tie_tolerance: float = 1e-9,
+) -> dict[str, Any]:
+    """Top-1 accuracy of a policy against the expert scores — never alone (R7.1).
+
+    A policy action is *correct* when its expert score ties the best score of
+    the node's action set within ``tie_tolerance``: a different-but-equally-
+    optimal action must not be penalized, which is exactly what raw
+    label-matching accuracy gets wrong. The report always carries the
+    collection's multi-optimal node distribution beside the accuracy — without
+    it, acc@1 is unreadable — and must never be compared between collections
+    made with different experts (the tie structure, hence the accuracy, is an
+    expert property).
+
+    Parameters
+    ----------
+    policy_actions:
+        The action chosen by the policy at each collected node.
+    expert_scores:
+        Per node, the per-candidate expert scores (array indexed by action, or
+        mapping action -> score), as fed to ``CollectionMetadata.record``.
+    action_sets:
+        Per node, the array of admissible actions.
+    collection:
+        The :class:`~gyozas.collection.CollectionMetadata` (or its ``to_dict``
+        output) recorded on the same nodes — required, keyword-only: acc@1 is
+        never reported without the multi-optimal distribution.
+
+    Returns
+    -------
+    dict with ``accuracy_at_1``, ``n_nodes``, and the collection record
+    (``multi_optimal_distribution``, ``frac_multi_optimal``, ``n_decisions``).
+    """
+    actions = list(policy_actions)
+    if not (len(actions) == len(expert_scores) == len(action_sets)):
+        raise ValueError("policy_actions, expert_scores and action_sets must cover the same nodes.")
+    if isinstance(collection, dict):
+        collection_record = dict(collection)
+    else:
+        collection_record = collection.to_dict()
+    if len(actions) != collection_record.get("n_decisions"):
+        raise ValueError(
+            f"{len(actions)} policy nodes but the collection recorded "
+            f"{collection_record.get('n_decisions')}: acc@1 and the multi-optimal "
+            "distribution must cover the same collected nodes."
+        )
+
+    n_correct = 0
+    for action, scores, action_set in zip(actions, expert_scores, action_sets, strict=False):
+        action_scores = [
+            float(scores[a])
+            if isinstance(scores, dict) and a in scores
+            else (float(scores[int(a)]) if not isinstance(scores, dict) and 0 <= int(a) < len(scores) else None)
+            for a in np.asarray(action_set)
+        ]
+        finite = [s for s in action_scores if s is not None and np.isfinite(s)]
+        if not finite:
+            continue
+        best = max(finite)
+        tol = tie_tolerance * max(1.0, abs(best))
+        own = (
+            float(scores[action])
+            if isinstance(scores, dict) and action in scores
+            else (
+                float(scores[int(action)]) if not isinstance(scores, dict) and 0 <= int(action) < len(scores) else None
+            )
+        )
+        if own is not None and np.isfinite(own) and own >= best - tol:
+            n_correct += 1
+    accuracy = n_correct / len(actions) if actions else 0.0
+    return {
+        "accuracy_at_1": accuracy,
+        "n_nodes": len(actions),
+        **collection_record,
+    }
+
+
 def paired_per_instance_ratios(method: dict[str, float], baseline: dict[str, float]) -> dict[str, float]:
     """Paired per-instance ratios ``method / baseline`` on the common instances.
 

@@ -3,9 +3,11 @@
 import csv
 import json
 
+import numpy as np
 import pytest
 
 from gyozas.metrics import (
+    accuracy_at_1,
     catastrophic_losses,
     friedman_nemenyi,
     paired_per_instance_ratios,
@@ -219,3 +221,75 @@ class TestSummaryTable:
             rows = list(csv.reader(f))
         assert rows[0][0] == "method"
         assert {row[0] for row in rows[1:]} == {"m1", "m2"}
+
+
+class TestAccuracyAt1:
+    """R7.1: acc@1 is tie-aware and never reported without the collection."""
+
+    def _collection(self, n_decisions=3, distribution=None):
+        from gyozas.collection import CollectionMetadata
+
+        metadata = CollectionMetadata()
+        metadata.n_decisions = n_decisions
+        return metadata
+
+    def test_tie_aware_correctness(self):
+        # Node 1: two tied-optimal actions {0, 1}; the policy picks 1 — correct.
+        # Node 2: unique optimal 0; the policy picks 1 — incorrect.
+        # Node 3: policy picks the unique optimal 2 — correct.
+        scores = [np.array([1.0, 1.0 + 1e-12, 0.5]), np.array([2.0, 0.1]), np.array([0.0, 1.0, 3.0])]
+        action_sets = [np.array([0, 1, 2]), np.array([0, 1]), np.array([0, 1, 2])]
+        report = accuracy_at_1([1, 1, 2], scores, action_sets, collection=self._collection())
+        assert report["accuracy_at_1"] == pytest.approx(2 / 3)
+        assert report["n_nodes"] == 3
+        assert report["n_decisions"] == 3
+
+    def test_report_carries_multi_optimal_distribution(self):
+        from gyozas.collection import CollectionMetadata
+
+        metadata = CollectionMetadata()
+        metadata.record(np.array([1.0, 1.0]), np.array([0, 1]))  # 2 optimal actions
+        metadata.record(np.array([1.0, 0.0]), np.array([0, 1]))  # 1 optimal action
+        scores = [np.array([1.0, 1.0]), np.array([1.0, 0.0])]
+        action_sets = [np.array([0, 1]), np.array([0, 1])]
+        report = accuracy_at_1([0, 0], scores, action_sets, collection=metadata)
+        assert report["multi_optimal_distribution"] == {1: 1, 2: 1}
+        assert report["frac_multi_optimal"] == pytest.approx(0.5)
+        assert report["accuracy_at_1"] == 1.0
+
+    def test_dict_collection_accepted(self):
+        report = accuracy_at_1(
+            [0],
+            [np.array([1.0, 0.5])],
+            [np.array([0, 1])],
+            collection={"n_decisions": 1, "multi_optimal_distribution": {1: 1}, "frac_multi_optimal": 0.0},
+        )
+        assert report["accuracy_at_1"] == 1.0
+
+    def test_node_count_mismatch_raises(self):
+        with pytest.raises(ValueError, match="same collected nodes"):
+            accuracy_at_1(
+                [0, 1],
+                [np.array([1.0]), np.array([1.0])],
+                [np.array([0]), np.array([0])],
+                collection=self._collection(n_decisions=3),
+            )
+
+    def test_length_mismatch_raises(self):
+        with pytest.raises(ValueError, match="same nodes"):
+            accuracy_at_1(
+                [0], [np.array([1.0]), np.array([1.0])], [np.array([0])], collection=self._collection(n_decisions=1)
+            )
+
+    def test_unknown_policy_action_counts_as_incorrect(self):
+        report = accuracy_at_1(
+            [5], [np.array([1.0, 0.5])], [np.array([0, 1])], collection=self._collection(n_decisions=1)
+        )
+        assert report["accuracy_at_1"] == 0.0
+
+    def test_non_finite_scores_ignored(self):
+        # Node whose only finite best is 0.0; a NaN candidate is ignored.
+        report = accuracy_at_1(
+            [0], [np.array([0.0, np.nan])], [np.array([0, 1])], collection=self._collection(n_decisions=1)
+        )
+        assert report["accuracy_at_1"] == 1.0

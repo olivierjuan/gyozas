@@ -16,6 +16,8 @@ table that feeds the paper.
 
 ::: gyozas.metrics.catastrophic_losses
 
+::: gyozas.metrics.accuracy_at_1
+
 ::: gyozas.metrics.solved_vs_truncated
 
 ::: gyozas.metrics.win_rate
