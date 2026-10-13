@@ -67,3 +67,8 @@ coverage.xml
 venv/
 ENV/
 env/
+
+# Benchmark strate instance files (large; manifests and provenance are committed,
+# see scripts/build_strate_data.py)
+data/**/*.mps
+data/**/*.mps.gz
