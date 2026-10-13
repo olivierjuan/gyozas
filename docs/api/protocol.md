@@ -9,7 +9,7 @@ from gyozas import ProtocolSnapshot
 
 snapshot = ProtocolSnapshot.capture(
     "G2-v0",
-    strate_dirs={"miplib_s": "data/miplib_s", "milp_l": "data/milp_l"},
+    strate_dirs={"miplib_s": "path/to/miplib_s", "milp_l": "path/to/milp_l"},
     provenance={"date": "2026-10-13", "decision": "G2 freeze"},
 )
 snapshot.save("protocol-g2-v0.json")

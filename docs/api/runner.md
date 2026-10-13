@@ -20,7 +20,7 @@ methods = {
         policy=lambda: CallablePolicy(relpscost_action),
     ),
 }
-runner = Runner(config, methods, {"miplib_s": "data/miplib_s"}, "results/")
+runner = Runner(config, methods, {"miplib_s": "path/to/miplib_s"}, "results/")
 runner.run()
 ```
 
