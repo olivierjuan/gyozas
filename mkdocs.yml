@@ -79,6 +79,7 @@ nav:
     - Information Functions: api/informations.md
     - Instance Generators: api/instances.md
     - Instance Manifest: api/manifest.md
+    - Run Identity: api/run-identity.md
     - Instance Modifiers: api/modifiers.md
     - Solver Configuration: api/solver-config.md
     - Seeds: api/seeds.md

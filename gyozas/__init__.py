@@ -51,6 +51,7 @@ from gyozas.rewards.integral_bound import DualIntegral, PrimalDualIntegral, Prim
 from gyozas.rewards.lp_iterations import LPIterations
 from gyozas.rewards.nnodes import NNodes
 from gyozas.rewards.solving_time import SolvingTime
+from gyozas.run_identity import RunIdentity
 from gyozas.seeds import SeedTriplet
 from gyozas.solver_config import SolverConfig, available_profiles, get_profile, register_profile
 from gyozas.trajectories import (
@@ -113,6 +114,7 @@ __all__ = [
     "paired_per_instance_ratios",
     "quantiles",
     "register_profile",
+    "RunIdentity",
     "save_table",
     "shifted_geometric_mean",
     "solved_vs_truncated",
