@@ -1,4 +1,5 @@
 import logging
+import random
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -7,6 +8,7 @@ from numpy.typing import NDArray
 from pyscipopt import SCIP_EVENTTYPE, SCIP_RESULT, Branchrule, Eventhdlr, Model
 
 from gyozas._utils import is_fixed_domain
+from gyozas.augmentation import ZarpellonAugmentation
 
 from .threaded_dynamics import ThreadedDynamics
 
@@ -104,6 +106,14 @@ class BranchingOracle(Branchrule):
         if self.die_event.is_set():
             self.scip.interruptSolve()
             return {"result": SCIP_RESULT.DIDNOTRUN}
+        augmentation = self.dynamics.augmentation
+        if augmentation is not None and self.dynamics.augmentation_explored < augmentation.k:
+            # Zarpellon augmentation: the explorer branches instead of the policy;
+            # the node is not exposed to the policy and not counted as its work.
+            result = self._explore()
+            if result == SCIP_RESULT.BRANCHED:
+                self.dynamics.augmentation_explored += 1
+            return {"result": result}
         self.count += 1
         current_node = self.scip.getCurrentNode()
         self.node_order[self.count] = current_node.getNumber()
@@ -145,6 +155,15 @@ class BranchingOracle(Branchrule):
         self.dynamics.counters.decisions += 1
 
         return {"result": SCIP_RESULT.BRANCHED}
+
+    def _explore(self) -> "SCIP_RESULT":
+        """One explorer branching: a uniformly random LP branching candidate."""
+        cands, branch_cand_sols, _fracs, ncands, _npriocands, _nimplcands = self.scip.getLPBranchCands()
+        if ncands == 0:
+            return SCIP_RESULT.DIDNOTRUN
+        idx = self._explorer_rng.randrange(ncands)
+        self.scip.branchVarVal(cands[idx], branch_cand_sols[idx])
+        return SCIP_RESULT.BRANCHED
 
     def _creating_decision(self, node) -> BranchingDecision | None:
         """The branching decision (variable x direction) that created this node."""
@@ -207,6 +226,7 @@ class BranchingDynamics(ThreadedDynamics):
     def __init__(
         self,
         with_extra_actions: list[int] | list[ExtraBranchingActions] | list[int | ExtraBranchingActions] | None = None,
+        augmentation: ZarpellonAugmentation | None = None,
     ) -> None:
         super().__init__()
         self.action = None
@@ -216,6 +236,8 @@ class BranchingDynamics(ThreadedDynamics):
         self.feasible_nodes: list = []
         self.counters = PairedCounters()
         self.last_branching_decision: BranchingDecision | None = None
+        self.augmentation = augmentation
+        self.augmentation_explored = 0
         self.current_node_id = None
         self._last_node_id = None
         self.with_extra_actions: NDArray[np.int64] | None = (
@@ -241,7 +263,12 @@ class BranchingDynamics(ThreadedDynamics):
         self.feasible_nodes = []
         self.counters = PairedCounters()
         self.last_branching_decision = None
+        self.augmentation_explored = 0
+        if self.augmentation is not None:
+            self.augmentation.apply(model)
         self.branch_rule = BranchingOracle(model, self.obs_event, self.action_event, self.die_event, self)
+        if self.augmentation is not None:
+            self.branch_rule._explorer_rng = random.Random(self.augmentation.seed)
         model.includeBranchrule(
             self.branch_rule,
             "python-mostinf",

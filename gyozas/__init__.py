@@ -7,6 +7,7 @@ try:
 except PackageNotFoundError:
     __version__ = "unknown"
 
+from gyozas.augmentation import ZarpellonAugmentation
 from gyozas.collection import CollectionMetadata
 from gyozas.dynamics import Dynamics
 from gyozas.dynamics.branching import (
@@ -71,6 +72,7 @@ __all__ = [
     "StrongBranchingExpert",
     "Trajectory",
     "TrajectoryRecorder",
+    "ZarpellonAugmentation",
     "load_trajectories",
     "retrospective_trajectories",
     "save_trajectories",

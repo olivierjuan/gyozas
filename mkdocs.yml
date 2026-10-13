@@ -84,6 +84,7 @@ nav:
     - Solver Configuration: api/solver-config.md
     - Seeds: api/seeds.md
     - Experts: api/experts.md
+    - Augmentation: api/augmentation.md
     - Data Collection: api/collection.md
     - Trajectories: api/trajectories.md
     - Metrics and Statistics: api/metrics.md
