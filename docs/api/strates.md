@@ -3,7 +3,7 @@
 The three benchmark strates of the unified learn2branch protocol are on-disk
 instance sets with **embedded, frozen splits** (R3.1/R3.2). The strate *data*
 lives in the benchmark repository that depends on gyozas
-(`learn2branch-benchmark/data/`); the harness provides only the mechanisms
+(`L2B-Bench/data/`); the harness provides only the mechanisms
 below:
 
 | strate | splits | instances | source |
@@ -24,7 +24,7 @@ manifests are. Rebuild the instance files with the benchmark repository's
 ```python
 from gyozas.strates import Strate
 
-strate = Strate.load("path/to/miplib_s")   # learn2branch-benchmark/data/miplib_s
+strate = Strate.load("path/to/miplib_s")   # L2B-Bench/data/miplib_s
 problems = strate.verify()   # [] when every instance matches its hash
 names_by_split = strate.splits()
 ```
