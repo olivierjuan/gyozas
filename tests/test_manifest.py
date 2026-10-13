@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from gyozas.manifest import InstanceManifest, file_hash
@@ -61,12 +63,43 @@ def test_verify_detects_unknown_instance(files):
     manifest = InstanceManifest.build({k: v for k, v in files.items() if k[0] == "synthetic"})
     extra = files[("miplib-s", "test", "29iv")]
     problems = manifest.verify({("miplib-s", "test", "29iv"): extra})
-    assert problems == ["miplib-s/test/29iv: not in manifest"]
+    assert "miplib-s/test/29iv: not in manifest" in problems
+    assert len(problems) == 4  # plus the three manifest entries with no file provided
 
 
 def test_verify_clean(files):
     manifest = InstanceManifest.build(files)
     assert manifest.verify(files) == []
+
+
+def test_load_rejects_tampered_manifest(tmp_path, files):
+    manifest = InstanceManifest.build(files)
+    path = tmp_path / "manifest.json"
+    manifest.save(path)
+    data = json.loads(path.read_text())
+    first_key = sorted(data["entries"])[0]
+    data["entries"][first_key]["sha256"] = "0" * 64
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="hash mismatch"):
+        InstanceManifest.load(path)
+
+
+def test_load_rejects_tampered_provenance(tmp_path, files):
+    manifest = InstanceManifest.build(files, provenance={"version": 1})
+    path = tmp_path / "manifest.json"
+    manifest.save(path)
+    data = json.loads(path.read_text())
+    data["provenance"]["version"] = 2
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="hash mismatch"):
+        InstanceManifest.load(path)
+
+
+def test_verify_reports_manifest_entries_missing_files(files):
+    manifest = InstanceManifest.build(files)
+    partial = {k: v for k, v in files.items() if k[0] == "synthetic"}
+    problems = manifest.verify(partial)
+    assert problems == ["miplib-s/test/29iv: in manifest but no file provided"]
 
 
 def test_save_load_roundtrip(tmp_path, files):

@@ -81,22 +81,38 @@ class InstanceManifest:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "InstanceManifest":
-        return cls(
+        manifest = cls(
             entries=dict(data["entries"]),
             counts=dict(data["counts"]),
             provenance=dict(data.get("provenance", {})),
             hash=data.get("hash", ""),
         )
+        recomputed = _manifest_hash(
+            {"entries": manifest.entries, "counts": manifest.counts, "provenance": manifest.provenance, "hash": ""}
+        )
+        if manifest.hash != recomputed:
+            raise ValueError(
+                f"Manifest hash mismatch: recorded {manifest.hash}, content hashes to {recomputed}. "
+                "The manifest was modified after it was signed."
+            )
+        return manifest
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, InstanceManifest) and self.to_dict() == other.to_dict()
 
     def verify(self, files: dict[InstanceKey, str | Path]) -> list[str]:
-        """Re-hash the given files and report every mismatch or missing entry."""
+        """Re-hash the given files and report every mismatch, on either side.
+
+        Reports files whose hash differs from the manifest, files not in the
+        manifest, and manifest entries with no corresponding file — a dataset
+        missing instances must not verify clean.
+        """
         problems = []
+        provided = set()
         for key in sorted(files):
             strate, split, name = key
             entry_key = f"{strate}/{split}/{name}"
+            provided.add(entry_key)
             entry = self.entries.get(entry_key)
             if entry is None:
                 problems.append(f"{entry_key}: not in manifest")
@@ -104,6 +120,8 @@ class InstanceManifest:
             actual = file_hash(files[key])
             if actual != entry["sha256"]:
                 problems.append(f"{entry_key}: hash mismatch (expected {entry['sha256']}, got {actual})")
+        for entry_key in sorted(set(self.entries) - provided):
+            problems.append(f"{entry_key}: in manifest but no file provided")
         return problems
 
 
