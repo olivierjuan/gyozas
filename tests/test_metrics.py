@@ -25,11 +25,15 @@ class TestShiftedGeometricMean:
     def test_constant_values(self):
         assert shifted_geometric_mean([2, 2, 2]) == pytest.approx(2.0)
 
-    def test_shift_floors_small_values(self):
-        # With shift=1.0, 0.5 is floored to 1.0.
-        assert shifted_geometric_mean([0.5, 2.0], shift=1.0) == pytest.approx(2.0**0.5)
+    def test_shift_absorbs_zeros_literature_formula(self):
+        # Achterberg SGM_s = (prod(v + s))^(1/n) - s; a zero (solved in presolve) is absorbed.
+        expected = (1.0 * 6.0 * 4.0) ** (1 / 3) - 1.0
+        assert shifted_geometric_mean([0.0, 5.0, 3.0], shift=1.0) == pytest.approx(expected)
 
-    def test_no_floor_by_default_preserves_ratios(self):
+    def test_known_shifted_value(self):
+        assert shifted_geometric_mean([1.0, 4.0], shift=1.0) == pytest.approx(10.0**0.5 - 1.0)
+
+    def test_no_shift_by_default_preserves_ratios(self):
         assert shifted_geometric_mean([0.5, 2.0]) == pytest.approx(1.0)
 
     def test_known_value(self):
@@ -42,6 +46,10 @@ class TestShiftedGeometricMean:
     def test_non_positive_raises(self):
         with pytest.raises(ValueError):
             shifted_geometric_mean([1.0, 0.0])
+
+    def test_too_negative_for_shift_raises(self):
+        with pytest.raises(ValueError):
+            shifted_geometric_mean([-2.0, 5.0], shift=1.0)
 
 
 class TestPairedRatios:
@@ -138,6 +146,22 @@ class TestFriedmanNemenyi:
         with pytest.raises(ValueError, match="three methods"):
             friedman_nemenyi({"a": {"i1": 1.0, "i2": 2.0}, "b": {"i1": 2.0, "i2": 1.0}})
 
+    def test_nan_raises_instead_of_reading_as_no_difference(self):
+        per_method = {
+            "good": {"i1": 1.0, "i2": 1.0, "i3": 1.0},
+            "mid": {"i1": 2.0, "i2": 2.0, "i3": 2.0},
+            "bad": {"i1": 3.0, "i2": 3.0, "i3": float("nan")},
+        }
+        with pytest.raises(ValueError, match="finite"):
+            friedman_nemenyi(per_method)
+
+    def test_nemenyi_alpha_010_matches_exact_quantiles(self):
+        # k=10, alpha=0.10: exact studentized-range quantile / sqrt(2) = 2.919889.
+        from gyozas.metrics import _NEMENYI_Q
+
+        assert _NEMENYI_Q[0.10][10] == pytest.approx(2.919889, abs=1e-5)
+        assert _NEMENYI_Q[0.10][4] == pytest.approx(2.291341, abs=1e-5)
+
 
 class TestWilcoxon:
     def test_one_sided_significant(self):
@@ -149,6 +173,10 @@ class TestWilcoxon:
     def test_identical_gives_p_one(self):
         values = {f"i{t}": float(t) for t in range(10)}
         assert wilcoxon_pair(values, dict(values))["p_value"] == 1.0
+
+    def test_nan_raises(self):
+        with pytest.raises(ValueError, match="finite"):
+            wilcoxon_pair({"a": 1.0, "b": 2.0}, {"a": 2.0, "b": float("nan")})
 
     def test_holm_family(self):
         methods = {"ref": {f"i{t}": 100.0 for t in range(30)}}

@@ -30,13 +30,13 @@ _NEMENYI_Q = {
     0.10: {
         2: 1.644854,
         3: 2.052281,
-        4: 2.241371,
-        5: 2.386090,
-        6: 2.501930,
-        7: 2.598424,
-        8: 2.679632,
-        9: 2.748821,
-        10: 2.808018,
+        4: 2.291341,
+        5: 2.459516,
+        6: 2.588521,
+        7: 2.692732,
+        8: 2.779884,
+        9: 2.854606,
+        10: 2.919889,
     },
 }
 
@@ -63,19 +63,20 @@ _TRUNCATED_STATUSES = {
 def shifted_geometric_mean(values, shift: float = 0.0) -> float:
     """Shifted geometric mean (SGM) of a per-instance metric.
 
-    ``SGM = exp(mean(log(max(v, shift))))``. With the default ``shift=0`` this
-    is the plain geometric mean; pass ``shift=1.0`` for the shifted variant
-    used on raw node counts. Per-instance ratios must be aggregated *without*
-    a positive shift, or improvements (ratio < shift) would be erased.
+    The SCIP/MIPLIB convention (Achterberg 2007):
+    ``SGM = (prod(v + shift))^(1/n) - shift``. With the default ``shift=0``
+    this is the plain geometric mean and values must be strictly positive;
+    pass ``shift=1.0`` for raw node/time counts, where zeros (instances
+    solved in presolve) are absorbed by the shift. Per-instance ratios must
+    be aggregated *without* a positive shift, or improvements (ratio < 1)
+    would be erased.
     """
     arr = np.asarray(list(values), dtype=float)
     if arr.size == 0:
         raise ValueError("shifted_geometric_mean needs at least one value.")
-    if (arr <= 0).any():
-        raise ValueError("shifted_geometric_mean needs strictly positive values.")
-    if shift > 0:
-        arr = np.maximum(arr, shift)
-    return float(np.exp(np.mean(np.log(arr))))
+    if (arr + shift <= 0).any():
+        raise ValueError("shifted_geometric_mean needs values + shift > 0.")
+    return float(np.exp(np.mean(np.log(arr + shift))) - shift)
 
 
 def paired_per_instance_ratios(method: dict[str, float], baseline: dict[str, float]) -> dict[str, float]:
@@ -184,6 +185,8 @@ def friedman_nemenyi(per_method: dict[str, dict[str, float]], alpha: float = 0.0
     the Nemenyi critical distance, and which method pairs differ significantly.
     """
     methods, _instances, values = _align_methods(per_method)
+    if not np.isfinite(values).all():
+        raise ValueError("Rank tests need finite values; a NaN or inf metric would silently read as 'no difference'.")
     k = len(methods)
     if k < 3:
         raise ValueError("Friedman needs at least three methods; use wilcoxon_pair for two.")
@@ -222,6 +225,8 @@ def wilcoxon_pair(method: dict[str, float], baseline: dict[str, float]) -> dict[
     common = sorted(set(method) & set(baseline))
     x = np.array([method[i] for i in common], dtype=float)
     y = np.array([baseline[i] for i in common], dtype=float)
+    if not (np.isfinite(x).all() and np.isfinite(y).all()):
+        raise ValueError("Wilcoxon needs finite values; a NaN or inf metric would silently produce a NaN p-value.")
     if np.allclose(x, y):
         return {"statistic": 0.0, "p_value": 1.0, "n_common": len(common)}
     result = scipy_stats.wilcoxon(x, y, alternative="less")
