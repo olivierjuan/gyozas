@@ -98,6 +98,28 @@ class TestDocumentedProfiles:
         assert "NNodes" in profile.training["reward"]
         assert "no restarts" in profile.training["scip_protocol"]
 
+    def test_mamba_declares_its_two_stage_il_regime(self):
+        # The solver-stats family's sequence model: relpscost-expert
+        # trajectories, contrastively pretrained TreeGateNet embeddings, then
+        # a selective SSM over the sequentialized path. Like every other
+        # profile, the sandbox protocol stays training-side metadata.
+        from gyozas.observations import BranchingStateObservation
+
+        profile = get_fidelity_profile("mamba")
+        assert isinstance(profile.observation(), BranchingStateObservation)
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("solver-stats IL")
+        # The expert is relpscost along trajectories, not strong branching.
+        assert "relpscost" in profile.training["regime"]
+        assert "not strong branching" in profile.training["regime"]
+        # Two stages: contrastive pretraining, then the Mamba sequence model.
+        assert "contrastive" in profile.training["pretraining"]
+        assert "GroupedMamba" in profile.training["architecture"]
+        assert "selective SSM" in profile.training["architecture"]
+        assert "deterministic" in profile.training["inference"]
+        assert "sandbox" in profile.training["scip_protocol"]
+        assert "heuristics off" in profile.training["scip_protocol"]
+
     def test_tgppo_declares_its_ppo_regime(self):
         # PPO from scratch on the BranchingState triple, H3 reward, the
         # 'sandbox' SCIP setting with per-instance baselines. The sandbox
