@@ -1,4 +1,4 @@
-"""The documented native regimes of the eight benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the nine benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -163,6 +163,21 @@ def register_documented_profiles() -> list[str]:
                 "optimization": "REINFORCE with entropy bonus 1e-5, batches of 16 with gradient accumulation, ONE Adam step (lr 1e-6) per epoch of 10 episodes, instances sampled with replacement",
                 "validation": "every 50 epochs: 20 instances x 5 seeds greedy, gmean(nnodes+1)-1, best checkpoint kept; 20000 epochs officially (>= 6 days)",
                 "scip_protocol": "SCIP 6.0.1 (paper) / gasse_2019 params + timing/clocktype 2 (training) or 1 (evaluation), 3600 s limit; no restarts — a restart renumbers the tree and orphans the credit",
+            },
+        ),
+        FidelityProfile(
+            name="sorrel",
+            observation=lambda: NodeBipartite(),
+            training={
+                "regime": "RL (offline then online) on suboptimal demonstrations — no strong-branching expert",
+                "demonstrator": "vanilla hybrid branching (VHB): full strong branching with probability 0.05, otherwise pseudocost branching (explore-then-strong-branch with the weak expert deciding); argmax over the node's pseudo branching candidates",
+                "features": "the bipartite-LP observation (Gasse's 5 constraint / 1 edge / 19 variable features) on the tree MDP — each transition carries the two children's observations and their dual-bound-difference rewards",
+                "action_space": "SCIP pseudo branching candidates (harness: BranchingDynamics(pseudo_candidates=True)), applied through SCIPbranchVar",
+                "architecture": "Gasse's GCNN verbatim (PreNormLayer, emb 64), reused from the gasse profile — one actor and one critic of the same shape",
+                "offline_stage": "TD3BC: per-candidate-Q critic (Huber loss, kappa-weighted tree backup of the two children's Q-targets, gamma 0.9, kappa 0.8, target net soft update tau 1e-3 every 2 critic steps), actor loss -lmbda*(probs*Q).sum + CE with lmbda = alpha/|Q(a)| (alpha 0.01 on set covering), lr 1e-4, batch 32, epoch size 624, PreNorm warmup over a tenth of the data",
+                "online_stage": "PPO + Self-Imitation Learning: sampled rollouts, value = max over candidate logits, advantages = returns/r_max - value (normalized), clipped surrogate (epsilon 0.1), one accumulated update per 5-rollout epoch; SIL on a per-instance buffer of best trajectories (weight = clip(returns/r_max - value, min=0), actor CE x 10*weight, critic 0.5*weight^2/10), initialized from the TD3BC checkpoint",
+                "instances": "5 Ecole families x 10k instances (100k tree-MDP transitions; episodes length-limited, long-trajectory subsampling log(len,1.01)/len past 100 decisions)",
+                "scip_protocol": "SCIP 8.0.4 (ecole 0.8): heuristics off, restarts off (restartpolicy 'n'), separating/maxrounds 0, presolving/maxrestarts 0, pseudo branching candidates; 3600 s limit",
             },
         ),
     ]

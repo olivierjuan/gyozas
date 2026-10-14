@@ -14,6 +14,7 @@ DOCUMENTED = [
     "tgppo",
     "retrobranching",
     "scavuzzo",
+    "sorrel",
 ]
 
 
@@ -140,9 +141,30 @@ class TestDocumentedProfiles:
         assert "BiMatchingNet" in profile.training["architecture"]
         assert "mean-pooled" in profile.training["architecture"]
 
+    def test_sorrel_declares_its_offline_then_online_regime(self):
+        # SORREL 2024 (Feng et al., AAAI 2025): offline RL on suboptimal
+        # demonstrations (TD3BC), then online PPO + self-imitation. The
+        # demonstrator is VHB — strong branching w.p. 0.05, else pseudocosts —
+        # over SCIP's pseudo branching candidates; the tree-MDP machinery and
+        # the sandbox protocol stay training-side like every other RL profile.
+        profile = get_fidelity_profile("sorrel")
+        assert isinstance(profile.observation(), NodeBipartite)
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("RL (offline then online)")
+        assert "no strong-branching expert" in profile.training["regime"]
+        # The demonstrator and the pseudo-candidate action space.
+        assert "pseudocost" in profile.training["demonstrator"]
+        assert "pseudo_candidates=True" in profile.training["action_space"]
+        # Both stages, with their harness-visible hooks.
+        assert "TD3BC" in profile.training["offline_stage"]
+        assert "kappa" in profile.training["offline_stage"]
+        assert "Self-Imitation" in profile.training["online_stage"]
+        assert "heuristics off" in profile.training["scip_protocol"]
+        assert "restarts off" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
-        for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo"):
+        for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo", "sorrel"):
             profile = get_fidelity_profile(name)
             assert "6.0.1" in profile.training["scip_protocol"] or "8.0.4" in profile.training["scip_protocol"]
 
