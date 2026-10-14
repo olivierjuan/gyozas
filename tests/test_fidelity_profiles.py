@@ -17,6 +17,7 @@ DOCUMENTED = [
     "sorrel",
     "bbmdp",
     "cambranch",
+    "dsccl",
 ]
 
 
@@ -219,12 +220,48 @@ class TestDocumentedProfiles:
         assert "root only" in profile.training["scip_protocol"]
         assert "coincide" in profile.training["scip_protocol"]
 
+    def test_dsccl_declares_its_stratified_contrastive_regime(self):
+        # DSC-CL / SC-MILP 2025 (Lu, Ma & Tao, arXiv 2511.21107): Gasse's IL
+        # regime with dynamic stratified contrastive learning over K-means
+        # node groups, upstream-augmented derivations, and hybrid branching
+        # (the expert in the inference loop at upstream nodes). Preprint —
+        # no official code.
+        profile = get_fidelity_profile("dsccl")
+        from gyozas.observations import MetaObservation, StrongBranchingScores
+
+        observation = profile.observation()
+        assert isinstance(observation, MetaObservation)
+        assert isinstance(profile.expert(), StrongBranchingExpert)
+        assert isinstance(observation.observations["bipartite"], NodeBipartite)
+        assert isinstance(observation.observations["sb_scores"], StrongBranchingScores)
+        assert profile.scip_params == {}
+        assert profile.training["regime"] == "IL (FSB) + dynamic stratified contrastive learning"
+        assert "no official repository" in profile.training["note"]
+        # K-means strata: m = 4-5 clusters by elbow.
+        assert "K-means" in profile.training["grouping"]
+        assert "by elbow" in profile.training["grouping"]
+        # The derivations: LT/RC-MILP at 35%, perturbations at 10%, labels kept.
+        assert "35% probability" in profile.training["augmentation"]
+        assert "10%" in profile.training["augmentation"]
+        assert "identical FSB" in profile.training["augmentation"]
+        assert "identical LP relaxation" in profile.training["augmentation"]
+        # Eq 5: learnable stratified weights, tau = 0.08.
+        assert "alpha_0 = 1" in profile.training["loss"]
+        assert "tau = 0.08" in profile.training["loss"]
+        assert "set to 0 at inference" in profile.training["lambda"]
+        # The hybrid: top-5 + FSB upstream (rho = 0.8), direct downstream.
+        assert "rho = 0.8" in profile.training["hybrid_branching"]
+        assert "top-k candidates (k = 5)" in profile.training["hybrid_branching"]
+        # SCIP 7.0.1, 1 h limit.
+        assert "SCIP 7.0.1" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo", "sorrel"):
             profile = get_fidelity_profile(name)
             assert "6.0.1" in profile.training["scip_protocol"] or "8.0.4" in profile.training["scip_protocol"]
         assert "8.0.3" in get_fidelity_profile("bbmdp").training["scip_protocol"]
+        assert "SCIP 7.0.1" in get_fidelity_profile("dsccl").training["scip_protocol"]
 
     def test_documented_profiles_can_be_reregistered(self):
         assert register_documented_profiles() == DOCUMENTED

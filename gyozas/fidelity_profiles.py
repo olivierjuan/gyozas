@@ -1,4 +1,4 @@
-"""The documented native regimes of the eleven benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the twelve benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -27,7 +27,13 @@ Notes on what is deliberately *not* hardcoded:
 
 from .experts import RelpscostExpert, StrongBranchingExpert
 from .fidelity import FidelityProfile, register_fidelity_profile
-from .observations import BranchingStateObservation, NodeBipartite, NodeBipartiteRetro
+from .observations import (
+    BranchingStateObservation,
+    MetaObservation,
+    NodeBipartite,
+    NodeBipartiteRetro,
+    StrongBranchingScores,
+)
 
 # Gasse 2019 / Lookback 2022 — the bipartite-LP regime (track B, synthetic Ecole
 # families where strong branching is affordable). Lookback is Gasse's regime
@@ -215,6 +221,32 @@ def register_documented_profiles() -> list[str]:
                 "optimization": "Adam (grid {1e-3, 5e-4, 1e-4}; pilot 1e-3), batch 64 samples (32 MILP/AMILP pairs), LR cut to 20% after 10 epochs without improvement",
                 "instances": "4 Ecole families, Gasse's splits; trained on 10% of the samples + the free AMILPs, tested 20 instances x 5 seeds per difficulty level",
                 "scip_protocol": "SCIP 6.0.1, cut generation at the root only (separating/maxrounds 0, maxroundsroot at default — the harness's gasse collection settings coincide), restarts disabled, 3600 s limit",
+                "native_strate": "ecole synthetics",
+            },
+        ),
+        FidelityProfile(
+            name="dsccl",
+            observation=lambda: MetaObservation(
+                {
+                    "bipartite": NodeBipartite(),
+                    "sb_scores": StrongBranchingScores(),
+                }
+            ),
+            expert=lambda: StrongBranchingExpert(),
+            training={
+                "regime": "IL (FSB) + dynamic stratified contrastive learning",
+                "note": "preprint (arXiv 2511.21107), no official repository (GitHub search Oct 2026) — ported from the paper",
+                "observation": "the composite the hybrid policy needs: the bipartite LP graph plus vanilla full SB scores on the live model (the expert stays in the inference loop at upstream nodes)",
+                "grouping": "offline K-means on the node features, m clusters (4 on setcover/cauctions/indset, 5 on facilities, by elbow) — the strata the contrastive loss pulls together",
+                "augmentation": "upstream-augmented MILP derivations, feature-level (no re-solve): LT-MILP (Thms 4.2-4.3: x_hat = Tx + t, T diagonal +/-1, t_I integer — LP bijection and identical FSB) and RC-MILP (Def 4.5: append the redundant constraint a_r = a_i + a_j, b_r = b_i + b_j of two linearly independent rows — identical LP relaxation) applied with 35% probability; objective, constraint and dual-variable Gaussian perturbations with 10%, the original SB labels retained",
+                "perturbation_magnitudes": "not specified in the paper — the pilot draws N(0, 0.05) on the normalized features",
+                "loss": "L = L_sup + lambda L_cons (Eq 5): L_sup Gasse's candidate cross-entropy; L_cons over a mini-batch of node-graph embeddings — positives = same-cluster nodes, the negatives weighted by w = sigmoid(alpha_|g(i)-g(j)|) with alpha_k the cumulative softplus of learnable theta_j (alpha_0 = 1), cosine similarity, tau = 0.08",
+                "lambda": "learnable balancing coefficient, set to 0 at inference — its initial value is not specified in the paper (pilot: 0.1)",
+                "hybrid_branching": "at upstream nodes (n_cand > rho n_cand(root), rho = 0.8) the model proposes its top-k candidates (k = 5) and full SB decides among them; downstream nodes branch directly on the model",
+                "architecture": "Gasse's bipartite GCNN plus per-node-type pooling into a graph embedding (the contrastive space Z)",
+                "optimization": "'the training set follows the standard configuration in prior works' — the pilot follows Gasse's (Adam 1e-3, mini-batches of node graphs)",
+                "instances": "4 Ecole families; train on the Easy level (100k samples), test 100 instances x 3 difficulty levels per family",
+                "scip_protocol": "SCIP 7.0.1, 3600 s limit",
                 "native_strate": "ecole synthetics",
             },
         ),
