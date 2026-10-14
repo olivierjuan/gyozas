@@ -8,6 +8,7 @@ from .done import Done
 from .integral_bound import DualIntegral, PrimalDualIntegral, PrimalIntegral
 from .lp_iterations import LPIterations
 from .nnodes import NNodes
+from .retro_branching import RetroBinaryFathomed, RetroSearchTree, subtree_transitions
 from .solving_time import SolvingTime
 
 
@@ -27,5 +28,8 @@ __all__ = [
     "PrimalDualIntegral",
     "LPIterations",
     "NNodes",
+    "RetroBinaryFathomed",
+    "RetroSearchTree",
+    "subtree_transitions",
     "SolvingTime",
 ]
