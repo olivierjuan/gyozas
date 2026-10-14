@@ -162,6 +162,7 @@ Built-in observations:
 | `Pseudocosts` | Per-variable pseudocost scores (1-D array, NaN for non-candidates) |
 | `StrongBranchingScores` | Full or partial strong-branching scores via LP probing |
 | `SolverStats` | ~35 O(1) solver scalars for the current node and the search tree (flat `dict[str, float]`) |
+| `BranchingStateObservation` | The Lin 2022 (T-BranT) solver-stats triple: 25 features per LP branching candidate (aligned with the action set), 8 node features, 53 tree features |
 | `MetaObservation` | Combines multiple observation functions into a tuple |
 
 ### BipartiteGraph
@@ -192,6 +193,23 @@ edge_vals    = obs.edge_features.values
 ```
 
 The bipartite graph representation (from [Gasse et al., NeurIPS 2019](https://arxiv.org/abs/1906.01629)) models the LP relaxation as a bipartite graph between constraint rows and variable columns.
+
+### BranchingState
+
+`BranchingStateObservation` returns the solver-statistics state of [Lin et al., 2022](https://doi.org/10.1016/j.knosys.2022.109455) (*Learning to Branch with Tree-aware Branching Transformers*, reused by TGPPO) — the structured alternative to the flat `SolverStats` dict when the method reasons per branching candidate:
+
+```python
+@dataclass
+class BranchingState:
+    candidate_features: np.ndarray  # (n_candidates, 25) — one row per LP branching candidate
+    candidate_indices: np.ndarray   # (n_candidates,) — LP column positions, aligned with the action set
+    node_features: np.ndarray       # (8,) — depth, bounds, domain changes of the current node
+    mip_features: np.ndarray        # (53,) — leaves, LP effort, bounds, open-node statistics
+```
+
+`candidate_indices` follows the branching action set exactly (same candidates, same order, same fixed-domain filter), so row *i* of `candidate_features` describes the variable `action_set[i]`.
+
+The original implementation reads SCIP internals through a patched PySCIPOpt. On stock PySCIPOpt (SCIP 10) every feature *slot* of the original layout exists, but statistics the Python API does not expose are exact zeros: 3 of 25 candidate slots (the pseudocost-score slot through a candidate-set-mean proxy), 8 of 8 node slots, and 30 of 53 tree slots carry signal. The per-slot availability is recorded in the `CANDIDATE_FEATURES`, `NODE_FEATURES`, and `MIP_FEATURES` tables, each entry a `FeatureSpec(name, available, note)` citing the missing SCIP call.
 
 ## Instance Generators
 
