@@ -26,7 +26,7 @@ Notes on what is deliberately *not* hardcoded:
 
 from .experts import RelpscostExpert, StrongBranchingExpert
 from .fidelity import FidelityProfile, register_fidelity_profile
-from .observations import NodeBipartite
+from .observations import BranchingStateObservation, NodeBipartite
 
 # Gasse 2019 / Lookback 2022 — the bipartite-LP regime (track B, synthetic Ecole
 # families where strong branching is affordable). Lookback is Gasse's regime
@@ -79,10 +79,11 @@ def register_documented_profiles() -> list[str]:
         ),
         FidelityProfile(
             name="tbrant",
+            observation=lambda: BranchingStateObservation(),
             expert=lambda: RelpscostExpert(),
             training={
                 "regime": "solver-stats",
-                "features": "~20 solver stats + ~40 tree features",
+                "features": "25 candidate + 8 node + 53 tree (the BranchingState triple; unavailable slots zeroed on stock PySCIPOpt)",
                 "architecture": "full tree as GAT input, transformer without positional encoding, BiMatching",
                 "augmentation_grid": {"s": 0, "k": 0, "note": "Zarpellon, 82 407 train / 36 554 test observations"},
                 "scip_protocol": "SCIP 6.0.1",

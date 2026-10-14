@@ -42,6 +42,14 @@ class TestDocumentedProfiles:
             assert isinstance(profile.expert(), RelpscostExpert)
             assert profile.training["augmentation_grid"] or name == "tbrant"
 
+    def test_tbrant_declares_its_native_observation(self):
+        # The runner builds the policy's environment from the profile's
+        # observation; a profile without one hands the policy None features
+        # (the regression that killed the first tbrant smoke run).
+        from gyozas.observations import BranchingStateObservation
+
+        assert isinstance(get_fidelity_profile("tbrant").observation(), BranchingStateObservation)
+
     def test_treegate_augmentation_grid_matches_the_paper(self):
         grid = get_fidelity_profile("treegate").training["augmentation_grid"]
         assert grid == {"s": [0, 1, 2, 3, 4], "k": [0, 1, 5, 10, 15]}
