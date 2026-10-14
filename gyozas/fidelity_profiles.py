@@ -18,10 +18,11 @@ Notes on what is deliberately *not* hardcoded:
   k ∈ {0, 1, 5, 10, 15}) is a data-collection parameter, one
   :class:`~gyozas.augmentation.ZarpellonAugmentation` per (s, k) — the grid is
   recorded, the concrete (s, k) is chosen by the collection setup.
-- The solver-stats features (TreeGate's 61-dim tree state, T-BranT's ~60
-  features, TGPPO's 25+8+53) are documented as feature specs; extracting them
-  as observation functions is per-method work verified against each official
-  repository.
+- The solver-stats family (TreeGate, T-BranT, TGPPO) shares one feature
+  parameterization — the 25+8+53 BranchingState triple, Zarpellon's original
+  (T-BranT and TGPPO reused it verbatim). All three profiles recharge the
+  same :class:`~gyozas.observations.BranchingStateObservation`, whose slots
+  unavailable on stock PySCIPOpt are exact zeros, documented per slot.
 """
 
 from .experts import RelpscostExpert, StrongBranchingExpert
@@ -68,10 +69,12 @@ def register_documented_profiles() -> list[str]:
         ),
         FidelityProfile(
             name="treegate",
+            observation=lambda: BranchingStateObservation(),
             expert=lambda: RelpscostExpert(),
             training={
                 "regime": "solver-stats",
-                "features": "61-dim tree state, multiplicative feature gating",
+                "features": "25 candidate + 8 node + 53 tree (the BranchingState triple, Zarpellon's original parameterization; unavailable slots zeroed on stock PySCIPOpt)",
+                "architecture": "NoTree / TreeGate feedforward, sigmoid feature gating from the tree state",
                 "augmentation_grid": dict(_AUGMENTATION_GRID),
                 "scip_protocol": "SCIP 6.0.1",
                 "native_strate": "miplib_s",

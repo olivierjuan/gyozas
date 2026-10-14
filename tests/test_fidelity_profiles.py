@@ -50,6 +50,13 @@ class TestDocumentedProfiles:
 
         assert isinstance(get_fidelity_profile("tbrant").observation(), BranchingStateObservation)
 
+    def test_treegate_declares_its_native_observation(self):
+        # TreeGate parameterized the 25+8+53 triple first (T-BranT and TGPPO
+        # reused it); its profile recharges the same observation.
+        from gyozas.observations import BranchingStateObservation
+
+        assert isinstance(get_fidelity_profile("treegate").observation(), BranchingStateObservation)
+
     def test_treegate_augmentation_grid_matches_the_paper(self):
         grid = get_fidelity_profile("treegate").training["augmentation_grid"]
         assert grid == {"s": [0, 1, 2, 3, 4], "k": [0, 1, 5, 10, 15]}
