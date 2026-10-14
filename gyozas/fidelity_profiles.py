@@ -1,4 +1,4 @@
-"""The documented native regimes of the ten benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the eleven benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -198,6 +198,24 @@ def register_documented_profiles() -> list[str]:
                 "validation": "every 100 episodes: 20 validation instances greedy, gmean n_nodes, best checkpoint kept",
                 "instances": "set covering 500x1000, 10k training instances cycled",
                 "scip_protocol": "SCIP 8.0.3 (ecole 0.7.3): heuristics ON (default), separating/maxrounds 0, restarts off (restartpolicy 'n'), depth-first node selection (nodeselection/dfs stdpriority = memsavepriority = 300000); 3600 s limit",
+            },
+        ),
+        FidelityProfile(
+            name="cambranch",
+            observation=lambda: NodeBipartite(),
+            expert=lambda: StrongBranchingExpert(),
+            training={
+                "regime": "IL (FSB) + joint contrastive learning over variable-shifted augmentations",
+                "note": "no official repository (verified Oct 2026) — ported from the paper (ICLR 2024 poster)",
+                "augmentation": "variable shifting (Thm 3.1: x_hat = x + s, integer shifts on integer variables, preserves the FSB labels and the whole B&B correspondence): every collected sample yields AMILP copies whose observation features transform analytically — sol_val and the incumbent values shift by s_j, the constraint bias by a_i^T s/||a_i||, binary flips to integer where s_j != 0, all other features invariant (no re-solve: the AMILP samples are free); 9 AMILPs per original sample (the paper's 10k originals + 90k augmented = the 10% budget)",
+                "shift_distribution": "not specified in the paper — the pilot draws i.i.d. integer uniform shifts over {-2..2} per variable",
+                "loss": "L = L_sup + 0.05 L_InfoNCE + 0.01 L_aux: candidate cross-entropy over the originals and the AMILPs together; InfoNCE over the batch's (original, its own AMILP) pairs on L2-normalized graph embeddings (positives = its own AMILP, negatives = the batch's other AMILPs); the auxiliary term is the squared divergence between each original's and its AMILP's candidate distributions (lambda_1 0.05, lambda_2 0.01)",
+                "architecture": "Gasse's GCNN verbatim (PreNorm, emb 64, the two message-passing passes) plus a projection head: per node type MaxPool+MeanPool of the post-conv embeddings -> MLP, concat -> MLP graph embedding, L2-normalized",
+                "projection_head": "sizes not specified in the paper — the pilot uses two-layer MLPs (2*64 -> 64 -> 64, ReLU) for both pooled projections and the graph embedding",
+                "optimization": "Adam (grid {1e-3, 5e-4, 1e-4}; pilot 1e-3), batch 64 samples (32 MILP/AMILP pairs), LR cut to 20% after 10 epochs without improvement",
+                "instances": "4 Ecole families, Gasse's splits; trained on 10% of the samples + the free AMILPs, tested 20 instances x 5 seeds per difficulty level",
+                "scip_protocol": "SCIP 6.0.1, cut generation at the root only (separating/maxrounds 0, maxroundsroot at default — the harness's gasse collection settings coincide), restarts disabled, 3600 s limit",
+                "native_strate": "ecole synthetics",
             },
         ),
     ]

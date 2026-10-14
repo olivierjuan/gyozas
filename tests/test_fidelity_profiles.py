@@ -16,6 +16,7 @@ DOCUMENTED = [
     "scavuzzo",
     "sorrel",
     "bbmdp",
+    "cambranch",
 ]
 
 
@@ -191,6 +192,32 @@ class TestDocumentedProfiles:
         # DFS node selection with the heuristics left on.
         assert "depth-first" in profile.training["scip_protocol"]
         assert "heuristics ON" in profile.training["scip_protocol"]
+
+    def test_cambranch_declares_its_shift_augmented_contrastive_regime(self):
+        # CAMBranch 2024 (Lin et al., ICLR 2024 poster): Gasse's IL regime
+        # with variable-shifted AMILP augmentations (the FSB labels preserved
+        # by Thm 3.1, the augmented features transformed analytically) and a
+        # joint contrastive loss. Paper-only port — no official code.
+        profile = get_fidelity_profile("cambranch")
+        assert isinstance(profile.observation(), NodeBipartite)
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("IL (FSB)")
+        assert "no official repository" in profile.training["note"]
+        # The augmentation: free AMILPs by feature transformation, 9 per
+        # sample, the shift distribution a declared pilot choice.
+        assert "Thm 3.1" in profile.training["augmentation"]
+        assert "no re-solve" in profile.training["augmentation"]
+        assert "9 AMILPs per original sample" in profile.training["augmentation"]
+        assert "not specified in the paper" in profile.training["shift_distribution"]
+        # The joint loss and its weights.
+        assert "0.05 L_InfoNCE" in profile.training["loss"]
+        assert "0.01 L_aux" in profile.training["loss"]
+        # Gasse's GCNN plus the projection head (sizes a pilot choice).
+        assert "Gasse's GCNN verbatim" in profile.training["architecture"]
+        assert "not specified in the paper" in profile.training["projection_head"]
+        # Root cuts only — the gasse collection settings coincide.
+        assert "root only" in profile.training["scip_protocol"]
+        assert "coincide" in profile.training["scip_protocol"]
 
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
