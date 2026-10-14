@@ -10,6 +10,7 @@ from .lp_iterations import LPIterations
 from .nnodes import NNodes
 from .retro_branching import RetroBinaryFathomed, RetroSearchTree, subtree_transitions
 from .solving_time import SolvingTime
+from .subtree_sizes import SubtreeSizes
 
 
 @runtime_checkable
@@ -30,6 +31,7 @@ __all__ = [
     "NNodes",
     "RetroBinaryFathomed",
     "RetroSearchTree",
+    "SubtreeSizes",
     "subtree_transitions",
     "SolvingTime",
 ]
