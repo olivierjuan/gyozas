@@ -31,9 +31,11 @@ class StrongBranchingScores:
     combined into a branch score via ``getBranchScoreMultiple`` (SCIP's default
     product score), the same scoring ecole/vanillafullstrong uses.
 
-    Returns a 1-D array of shape ``(max_lp_pos + 1,)`` with the score for each LP
-    candidate indexed by LP position (``NaN`` for non-candidates), an empty array
-    when there are no candidates, or ``None`` outside the solving stage.
+    Returns a 1-D array of shape ``(n_lp_cols,)`` with the score for each
+    candidate indexed by LP position (``NaN`` for non-candidates), or ``None``
+    outside the solving stage. Like ecole, the array is sized by the number of
+    LP columns, so it is indexable by any branching candidate — including the
+    pseudo candidates (a superset of the LP ones), which read ``NaN``.
 
     Parameters
     ----------
@@ -79,11 +81,9 @@ class StrongBranchingScores:
             cands = cands[:n_cands]
             cands = [v for v in cands if not is_fixed_domain(v) and v.getIndex() in lppos]
 
+        scores = np.full(model.getNLPCols(), np.nan, dtype=np.float64)
         if not cands:
-            return np.empty(0, dtype=np.float64)
-
-        max_idx = max(lppos[v.getIndex()] for v in cands) + 1
-        scores = np.full(max_idx, np.nan, dtype=np.float64)
+            return scores
 
         lp_obj = model.getLPObjVal()
         inf = model.infinity()

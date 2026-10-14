@@ -24,9 +24,11 @@ class Pseudocosts:
     where *obj_delta* is the LP bound improvement at the child node and
     *frac_delta* is the LP fractionality consumed by the branching.
 
-    Returns a 1-D array of shape ``(n_vars,)`` with the branch score for each
-    LP candidate (``NaN`` for non-candidates), or ``None`` outside the solving
-    stage.
+    Returns a 1-D array of shape ``(n_lp_cols,)`` with the branch score for
+    each LP candidate (``NaN`` for non-candidates), or ``None`` outside the
+    solving stage. Like ecole, the array is sized by the number of LP columns,
+    so it is indexable by any branching candidate — including the pseudo
+    candidates (a superset of the LP ones), which read ``NaN``.
 
     Note
     ----
@@ -62,8 +64,8 @@ class Pseudocosts:
                 var.getCol().getLPPos(): lp_val for var, lp_val in zip(cands, lp_vals, strict=False)
             }
 
-        max_idx = max(var.getCol().getLPPos() for var in cands) + 1
-        scores = np.full(max_idx, np.nan, dtype=np.float64)
+        n_cols = model.getNLPCols()
+        scores = np.full(n_cols, np.nan, dtype=np.float64)
         for var, lp_val in zip(cands, lp_vals, strict=False):
             scores[var.getCol().getLPPos()] = self._score(model, var, lp_val)
 
