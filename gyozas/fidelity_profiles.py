@@ -137,10 +137,23 @@ def register_documented_profiles() -> list[str]:
         ),
         FidelityProfile(
             name="scavuzzo",
+            observation=lambda: NodeBipartite(),
             training={
-                "regime": "RL (tree MDP)",
-                "mdp": "tree MDP with its tree policy gradient",
-                "features": "tree credit attribution, no history in the input",
+                "regime": "RL (REINFORCE) fine-tuning over an IL-pretrained policy",
+                "pretraining": "exactly the gasse_2019 regime (explore-then-strong-branching, expert_probability 0.05, 100k train / 20k valid samples, 1000 epochs, batch 32, Adam lr 1e-3, entropy bonus 0)",
+                "features": "the bipartite-LP observation (Gasse's 5 constraint / 1 edge / 19 variable features); FocusNode is read by the official agent for node bookkeeping only, never as input",
+                "architecture": "Gasse's GCNN verbatim (PreNormLayer, emb 64), reused from the gasse profile",
+                "instances": "set covering 400x750 (density 0.05) training / 500x600x0.10 in this benchmark's protocol",
+                "variants": {
+                    "mdp": "flat MDP: return of a decision = minus the number of nodes processed after it (cumulative NNodes at the decision minus at the end)",
+                    "tmdp+DFS": "tree MDP with depth-first node selection forced during training (nodeselection/dfs stdpriority = memsavepriority = 666666); return = -(subtree_size) - 1",
+                    "tmdp+ObjLim": "tree MDP with setObjlimit(optimal + 0.1) on training instances (eps = -0.1 for maximization); return = -(subtree_size) - 1",
+                },
+                "reward": "harness: NNodes (mdp) / SubtreeSizes (both tmdp variants); the tree credit needs the objlimit or DFS regime above to be well-defined",
+                "exploration": "actions sampled from Categorical(logits) during training, greedy at evaluation; sample_rate 0.05 of transitions kept per episode; episodes beyond 50000 iterations discarded",
+                "optimization": "REINFORCE with entropy bonus 1e-5, batches of 16 with gradient accumulation, ONE Adam step (lr 1e-6) per epoch of 10 episodes, instances sampled with replacement",
+                "validation": "every 50 epochs: 20 instances x 5 seeds greedy, gmean(nnodes+1)-1, best checkpoint kept; 20000 epochs officially (>= 6 days)",
+                "scip_protocol": "SCIP 6.0.1 (paper) / gasse_2019 params + timing/clocktype 2 (training) or 1 (evaluation), 3600 s limit; no restarts — a restart renumbers the tree and orphans the credit",
             },
         ),
     ]

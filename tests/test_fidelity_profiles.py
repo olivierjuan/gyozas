@@ -81,6 +81,23 @@ class TestDocumentedProfiles:
         assert profile.training["reward"].startswith("retro_binary_fathomed")
         assert "no restarts" in profile.training["scip_protocol"]
 
+    def test_scavuzzo_declares_its_three_variants(self):
+        # The paper offers mdp / tmdp+DFS / tmdp+ObjLim; all three are ported.
+        # The observation is Gasse's plain NodeBipartite (the official
+        # FocusNode is node bookkeeping, never model input), and the IL
+        # pretraining stage is metadata — the harness does not train.
+        profile = get_fidelity_profile("scavuzzo")
+        assert isinstance(profile.observation(), NodeBipartite)
+        assert profile.scip_params == {}
+        variants = profile.training["variants"]
+        assert set(variants) == {"mdp", "tmdp+DFS", "tmdp+ObjLim"}
+        # Both tmdp variants share the tree credit and its harness reward.
+        for variant in ("tmdp+DFS", "tmdp+ObjLim"):
+            assert "-(subtree_size) - 1" in variants[variant]
+        assert "SubtreeSizes" in profile.training["reward"]
+        assert "NNodes" in profile.training["reward"]
+        assert "no restarts" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo"):
