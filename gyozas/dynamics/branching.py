@@ -119,8 +119,28 @@ class BranchingOracle(Branchrule):
         self.node_order[self.count] = current_node.getNumber()
         self.dynamics.counters.nodes += 1
         self.dynamics.last_branching_decision = self._creating_decision(current_node)
-        branch_cands, branch_cand_sols, branch_cand_fracs, ncands, npriocands, nimplcands = self.scip.getLPBranchCands()
-        branch_cands = branch_cands[:ncands]
+        if self.dynamics.pseudo_candidates:
+            # The pseudo-candidates regime (ecole's ``pseudo_candidates=True``,
+            # SORREL 2024): the action set is SCIP's pseudo branching
+            # candidates — the integer variables fractional in the pseudo
+            # solution, typically more than the LP-fractional ones (some
+            # hold integral LP values; conversely an LP-fractional variable
+            # can be integral in the pseudo solution) — and the chosen action
+            # branches through ``SCIPbranchVar``, which picks the branching
+            # value itself (``SCIPbranchVarVal`` is refused on integral
+            # values).
+            pseudo_cands, npseudo, _npseudo_prio = self.scip.getPseudoBranchCands()
+            branch_cands = [
+                var
+                for var in pseudo_cands[:npseudo]
+                if var.getCol() is not None and not is_fixed_domain(var)
+            ]
+            branch_cand_sols = None
+        else:
+            branch_cands, branch_cand_sols, branch_cand_fracs, ncands, npriocands, nimplcands = (
+                self.scip.getLPBranchCands()
+            )
+            branch_cands = branch_cands[:ncands]
         action_set = np.array(
             [var.getCol().getLPPos() for var in branch_cands if not is_fixed_domain(var)], dtype=np.int64
         )
@@ -151,7 +171,10 @@ class BranchingOracle(Branchrule):
                 break
         if chosen_idx is None:
             raise ValueError(f"Action {best_cand_idx} not found in action set {action_set}")
-        self.scip.branchVarVal(branch_cands[chosen_idx], branch_cand_sols[chosen_idx])
+        if self.dynamics.pseudo_candidates:
+            self.scip.branchVar(branch_cands[chosen_idx])
+        else:
+            self.scip.branchVarVal(branch_cands[chosen_idx], branch_cand_sols[chosen_idx])
         self.dynamics.counters.decisions += 1
 
         return {"result": SCIP_RESULT.BRANCHED}
@@ -214,19 +237,27 @@ class BranchingDynamics(ThreadedDynamics):
     """Dynamics for variable branching decisions in the branch-and-bound solver.
 
     At each step, the agent selects which fractional variable to branch on.
-    The action set contains variable indices from SCIP's LP branching candidates.
+    The action set contains variable indices from SCIP's LP branching candidates
+    — or, with ``pseudo_candidates``, from SCIP's pseudo branching candidates
+    (ecole's ``pseudo_candidates=True`` regime: the integer variables
+    fractional in the pseudo solution, typically more than the LP-fractional
+    ones; the chosen action is applied through ``SCIPbranchVar``).
 
     Parameters
     ----------
     with_extra_actions
         Optional list of extra action IDs (e.g. ``ExtraBranchingActions.SKIP``)
         to prepend to the action set at each step.
+    pseudo_candidates
+        Whether the action set is SCIP's pseudo branching candidates instead of
+        the LP-fractional ones.
     """
 
     def __init__(
         self,
         with_extra_actions: list[int] | list[ExtraBranchingActions] | list[int | ExtraBranchingActions] | None = None,
         augmentation: ZarpellonAugmentation | None = None,
+        pseudo_candidates: bool = False,
     ) -> None:
         super().__init__()
         self.action = None
@@ -238,6 +269,7 @@ class BranchingDynamics(ThreadedDynamics):
         self.last_branching_decision: BranchingDecision | None = None
         self.augmentation = augmentation
         self.augmentation_explored = 0
+        self.pseudo_candidates = pseudo_candidates
         self.current_node_id = None
         self._last_node_id = None
         self.with_extra_actions: NDArray[np.int64] | None = (
