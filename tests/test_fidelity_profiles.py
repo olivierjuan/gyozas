@@ -98,6 +98,26 @@ class TestDocumentedProfiles:
         assert "NNodes" in profile.training["reward"]
         assert "no restarts" in profile.training["scip_protocol"]
 
+    def test_tgppo_declares_its_ppo_regime(self):
+        # PPO from scratch on the BranchingState triple, H3 reward, the
+        # 'sandbox' SCIP setting with per-instance baselines. The sandbox
+        # parameters stay training-side like every other RL profile (the
+        # active solver profile is a runner/cell setting).
+        from gyozas.observations import BranchingStateObservation
+
+        profile = get_fidelity_profile("tgppo")
+        assert isinstance(profile.observation(), BranchingStateObservation)
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("RL (PPO)")
+        assert "DifficultyAdaptive" in profile.training["reward"]
+        assert "no imitation pretraining" in profile.training["regime"]
+        # The baseline solve feeds both the reward and the cutoff.
+        assert "cutoff" in profile.training["baseline"]
+        assert "sandbox" in profile.training["scip_protocol"]
+        assert "heuristics off" in profile.training["scip_protocol"]
+        assert "BiMatchingNet" in profile.training["architecture"]
+        assert "mean-pooled" in profile.training["architecture"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo"):
