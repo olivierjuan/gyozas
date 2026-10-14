@@ -67,6 +67,20 @@ class TestDocumentedProfiles:
             assert profile.expert is None
             assert profile.training["regime"].startswith("RL")
 
+    def test_retrobranching_declares_its_native_observation(self):
+        # The 43-variable-feature observation (19 bipartite + 24 retro). The
+        # gasse_2019 parameters stay training-side (the runner would apply
+        # profile scip_params at evaluation, breaking comparability — the
+        # active solver profile stays a runner/cell setting, like every
+        # other profile here).
+        from gyozas.observations import NodeBipartiteRetro
+
+        profile = get_fidelity_profile("retrobranching")
+        assert isinstance(profile.observation(), NodeBipartiteRetro)
+        assert profile.scip_params == {}
+        assert profile.training["reward"].startswith("retro_binary_fathomed")
+        assert "no restarts" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo"):

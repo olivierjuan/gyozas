@@ -27,7 +27,7 @@ Notes on what is deliberately *not* hardcoded:
 
 from .experts import RelpscostExpert, StrongBranchingExpert
 from .fidelity import FidelityProfile, register_fidelity_profile
-from .observations import BranchingStateObservation, NodeBipartite
+from .observations import BranchingStateObservation, NodeBipartite, NodeBipartiteRetro
 
 # Gasse 2019 / Lookback 2022 — the bipartite-LP regime (track B, synthetic Ecole
 # families where strong branching is affordable). Lookback is Gasse's regime
@@ -120,11 +120,19 @@ def register_documented_profiles() -> list[str]:
         ),
         FidelityProfile(
             name="retrobranching",
+            observation=lambda: NodeBipartiteRetro(),
             training={
-                "regime": "RL",
-                "trajectories": "retrospective, reconstructed from the tree (harness: retrospective_trajectories)",
-                "credit": "associated return over the reconstructed trajectory",
-                "features": "parametrizable (bipartite by default)",
+                "regime": "RL (DQN)",
+                "reward": "retro_binary_fathomed (harness: RetroBinaryFathomed): binary sparse scores, retrospective sub-tree episodes (max_leaf_lp_gain, min_subtree_depth=1, fathomed transitions force-included)",
+                "features": "43 variable features (19 bipartite-LP + 24 retro), 5 constraint features, edge features on",
+                "architecture": "BipartiteGCN: emb 64, 1 round, aggregator add, inverse_leaky_relu activation, head depth 2, normal(0.01) weight init",
+                "instances": "set covering 165x230, seed 0",
+                "scip_protocol": "SCIP 7.0.5 (ecole 0.8.1), gasse_2019 params (training-side: no cuts, no restarts — a restart renumbers the tree and orphans the sub-tree episodes), 3600 s limit",
+                "replay": "uniform, capacity 100k transitions, 20k filled before learning, 1 gradient step per 10 transitions added",
+                "optimization": "Adam lr 5e-5, batch 128, MSE, gradient value clipping 10",
+                "exploration": "epsilon 0.025, uniform random actions",
+                "target": "1-step TD; the online net selects the next action, the target net evaluates it (Double-DQN math); soft Polyak update tau=1e-4 after every gradient step",
+                "dead_config": "n_step_return=3 stored in transitions but unused by the loss; use_double_dqn flag off (the non-double branch already computes Double-DQN targets); hard target update every 10k steps short-circuited by the soft update",
             },
         ),
         FidelityProfile(
