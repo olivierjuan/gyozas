@@ -8,6 +8,7 @@ per-slot availability is recorded in the feature tables.
 import numpy as np
 import pytest
 
+from gyozas.dynamics.branching import BranchingDynamics
 from gyozas.environment import Environment
 from gyozas.instances.files import FileGenerator
 from gyozas.observations import (
@@ -22,10 +23,16 @@ from gyozas.observations.branching_state import rel_distance, rel_position
 
 @pytest.fixture
 def env():
+    # A seeded dynamics: the unseeded one draws fresh SCIP permutation seeds
+    # from OS entropy at every reset, so the root behavior would vary run to
+    # run (the instance can even solve at the root on a lucky permutation).
+    dynamics = BranchingDynamics()
+    dynamics.seed(0)
     env = Environment(
         instance_generator=FileGenerator(directory="tests", pattern="*.lp"),
         observation_function=BranchingStateObservation(),
         scip_params={"display/verblevel": 0, "limits/nodes": 50},
+        dynamics=dynamics,
     )
     yield env
     env.close()
