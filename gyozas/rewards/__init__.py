@@ -4,6 +4,7 @@ from pyscipopt import Model
 
 from .arithmetic import ArithmeticMixin
 from .arithmetic import _Constant as Constant
+from .difficulty_adaptive import DifficultyAdaptive
 from .done import Done
 from .integral_bound import DualIntegral, PrimalDualIntegral, PrimalIntegral
 from .lp_iterations import LPIterations
@@ -23,6 +24,7 @@ __all__ = [
     "RewardFunction",
     "ArithmeticMixin",
     "Constant",
+    "DifficultyAdaptive",
     "Done",
     "PrimalIntegral",
     "DualIntegral",
