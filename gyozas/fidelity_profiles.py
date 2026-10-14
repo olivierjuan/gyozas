@@ -1,4 +1,4 @@
-"""The documented native regimes of the nine benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the ten benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -178,6 +178,26 @@ def register_documented_profiles() -> list[str]:
                 "online_stage": "PPO + Self-Imitation Learning: sampled rollouts, value = max over candidate logits, advantages = returns/r_max - value (normalized), clipped surrogate (epsilon 0.1), one accumulated update per 5-rollout epoch; SIL on a per-instance buffer of best trajectories (weight = clip(returns/r_max - value, min=0), actor CE x 10*weight, critic 0.5*weight^2/10), initialized from the TD3BC checkpoint",
                 "instances": "5 Ecole families x 10k instances (100k tree-MDP transitions; episodes length-limited, long-trajectory subsampling log(len,1.01)/len past 100 decisions)",
                 "scip_protocol": "SCIP 8.0.4 (ecole 0.8): heuristics off, restarts off (restartpolicy 'n'), separating/maxrounds 0, presolving/maxrestarts 0, pseudo branching candidates; 3600 s limit",
+            },
+        ),
+        FidelityProfile(
+            name="bbmdp",
+            observation=lambda: NodeBipartiteRetro(),
+            training={
+                "regime": "RL (DQN) from scratch on the corrected vanilla MDP — no pretraining, no expert (Prop. 3.1: the Tree MDP reduced to a per-visited-node MDP by recomputing reward and next states retrospectively)",
+                "features": "43 variable features (19 bipartite-LP + 24 retro global/focus-node features replicated per variable), 5 constraint features, edge features on — the RetroNodeBipartite observation, recharged from the retrobranching profile",
+                "action_space": "SCIP LP branching candidates (the default BranchingDynamics), applied through SCIPbranchVar",
+                "architecture": "DQN GCNN: LayerNorm + LeakyReLU everywhere (no PreNorm, explicitly no pretraining), emb 64, additive message passing, head Linear(64,64)->LeakyReLU->Linear(64,64)->LeakyReLU->Linear(64,18), weights ~ Normal(0, 0.01)",
+                "value_head": "HL-Gauss classification over log2(-z): 18 bins on [-1.5, 16.5] (bin width 1), target probs = erf-CDF differences with sigma = 0.75 bin widths, Q decoded as -2^E[centers] (so Q in [-65536, -0.5])",
+                "reward": "k-step returns over the visited subtree (n_step 3, gamma 1): per visited node a BFS over its visited descendants, the frontier ordered by global visit order, -gamma^step per dequeued node — read off the tracked B&B tree at episode end",
+                "next_states": "the frontier after 1 pop (the node's visited children) and after n_step pops, as step indices; done = no visited child (a fathomed node), not the end of the SCIP episode",
+                "target": "DDQN over multiple children: the online net selects each child's action (argmax over its candidates), the target net evaluates it, masked mean over the real children; combined 1-step (gamma) + n-step (gamma^n_step) element-wise losses",
+                "replay": "prioritized (alpha 0.6, beta 0.4->1.0, prior_eps 1e-3), capacity 100k transitions, 20k filled before learning, 10 gradient steps per episode transition (cap 500 per episode)",
+                "exploration": "epsilon-greedy 1.0 -> 0.025 (decay 1e-4 per gradient step) with softmax(Q/T) sampling, temperature 1.0 -> 1e-3 (decay 1e-5 per gradient step); greedy argmax at evaluation",
+                "optimization": "Adam lr 5e-5, batch 128, gradient-norm clip 10, target net soft update tau 1e-4 after every gradient step; the budget counts gradient steps (200k officially)",
+                "validation": "every 100 episodes: 20 validation instances greedy, gmean n_nodes, best checkpoint kept",
+                "instances": "set covering 500x1000, 10k training instances cycled",
+                "scip_protocol": "SCIP 8.0.3 (ecole 0.7.3): heuristics ON (default), separating/maxrounds 0, restarts off (restartpolicy 'n'), depth-first node selection (nodeselection/dfs stdpriority = memsavepriority = 300000); 3600 s limit",
             },
         ),
     ]

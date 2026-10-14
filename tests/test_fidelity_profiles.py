@@ -15,6 +15,7 @@ DOCUMENTED = [
     "retrobranching",
     "scavuzzo",
     "sorrel",
+    "bbmdp",
 ]
 
 
@@ -162,11 +163,41 @@ class TestDocumentedProfiles:
         assert "heuristics off" in profile.training["scip_protocol"]
         assert "restarts off" in profile.training["scip_protocol"]
 
+    def test_bbmdp_declares_its_corrected_vanilla_mdp_regime(self):
+        # BBMDP 2025 (Forel et al., NeurIPS 2025): the Tree MDP corrected into
+        # a vanilla MDP over the visited nodes (Prop. 3.1) — k-step returns
+        # recomputed retrospectively, DQN with an HL-Gauss value head, DFS node
+        # selection, heuristics ON. The 43-feature observation is recharged
+        # from the retrobranching profile; the protocol stays training-side.
+        from gyozas.observations import NodeBipartiteRetro
+
+        profile = get_fidelity_profile("bbmdp")
+        assert isinstance(profile.observation(), NodeBipartiteRetro)
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("RL (DQN)")
+        assert "no pretraining" in profile.training["regime"]
+        assert "corrected vanilla MDP" in profile.training["regime"]
+        # The HL-Gauss categorical value head over log2(-z).
+        assert "HL-Gauss" in profile.training["value_head"]
+        assert "18 bins" in profile.training["value_head"]
+        assert "-2^E[centers]" in profile.training["value_head"]
+        # The k-step retrospective reward and the per-transition done.
+        assert "n_step 3, gamma 1" in profile.training["reward"]
+        assert "done = no visited child" in profile.training["next_states"]
+        # DDQN multi-children targets and the prioritized replay.
+        assert "masked mean" in profile.training["target"]
+        assert "prioritized" in profile.training["replay"]
+        assert "10 gradient steps" in profile.training["replay"]
+        # DFS node selection with the heuristics left on.
+        assert "depth-first" in profile.training["scip_protocol"]
+        assert "heuristics ON" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo", "sorrel"):
             profile = get_fidelity_profile(name)
             assert "6.0.1" in profile.training["scip_protocol"] or "8.0.4" in profile.training["scip_protocol"]
+        assert "8.0.3" in get_fidelity_profile("bbmdp").training["scip_protocol"]
 
     def test_documented_profiles_can_be_reregistered(self):
         assert register_documented_profiles() == DOCUMENTED
