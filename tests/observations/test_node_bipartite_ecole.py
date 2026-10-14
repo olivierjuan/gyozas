@@ -293,3 +293,34 @@ class TestIncrementalUpdate:
             NodeBipartiteEcole.getBipartiteGraphRepresentation(m, prev_col_features=wrong_prev, suppress_warnings=True)
             col_warnings = [x for x in w if "column" in str(x.message).lower()]
             assert len(col_warnings) == 0
+
+
+class TestFeatureNameExports:
+    """The public feature-layout names stay in sync with the extractor."""
+
+    def test_counts_and_order(self):
+        from gyozas.observations import (
+            ECOLE_COL_FEATURE_NAMES,
+            ECOLE_ROW_FEATURE_NAMES,
+            N_ECOLE_COL_FEATURES,
+            N_ECOLE_ROW_FEATURES,
+        )
+
+        assert len(ECOLE_COL_FEATURE_NAMES) == N_ECOLE_COL_FEATURES == 19
+        assert len(ECOLE_ROW_FEATURE_NAMES) == N_ECOLE_ROW_FEATURES == 5
+        # The static block leads, the dynamic block follows (the layout the
+        # extractor builds its feature maps from).
+        assert ECOLE_COL_FEATURE_NAMES[:5] == (
+            "obj_coef", "binary", "integer", "implicit_integer", "continuous",
+        )
+        assert "sol_val" in ECOLE_COL_FEATURE_NAMES
+        assert ECOLE_ROW_FEATURE_NAMES == ("bias", "obj_cosine", "is_tight", "dual_sol", "age")
+
+    def test_extractor_writes_the_named_columns(self, branching_ctx):
+        from gyozas.observations import ECOLE_COL_FEATURE_NAMES, NodeBipartiteEcole
+
+        m, done, action_set, d = branching_ctx
+        if done:
+            pytest.skip("Instance solved at root")
+        obs = NodeBipartiteEcole().extract(m, done=False)
+        assert obs.variable_features.shape[1] == len(ECOLE_COL_FEATURE_NAMES)

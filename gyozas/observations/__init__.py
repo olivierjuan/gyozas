@@ -7,7 +7,13 @@ from .branching_state import (
 )
 from .branching_tree import BranchingTreeObservation
 from .meta_observation import MetaObservation
-from .node_bipartite_ecole import NodeBipartiteEcole
+from .node_bipartite_ecole import (
+    ECOLE_COL_FEATURE_NAMES,
+    ECOLE_ROW_FEATURE_NAMES,
+    N_ECOLE_COL_FEATURES,
+    N_ECOLE_ROW_FEATURES,
+    NodeBipartiteEcole,
+)
 from .node_bipartite_retro import (
     N_RETRO_FEATURES,
     RETRO_FEATURE_NAMES,
@@ -29,7 +35,11 @@ __all__ = [
     "BranchingStateObservation",
     "BranchingTreeObservation",
     "CANDIDATE_FEATURES",
+    "ECOLE_COL_FEATURE_NAMES",
+    "ECOLE_ROW_FEATURE_NAMES",
     "MIP_FEATURES",
+    "N_ECOLE_COL_FEATURES",
+    "N_ECOLE_ROW_FEATURES",
     "NODE_FEATURES",
     "NodeBipartite",
     "NodeBipartiteSCIP",

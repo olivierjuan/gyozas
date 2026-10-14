@@ -31,6 +31,14 @@ _DEFAULT_DYNAMIC_COL = (
 _DEFAULT_STATIC_ROW = ("bias", "obj_cosine")
 _DEFAULT_DYNAMIC_ROW = ("is_tight", "dual_sol", "age")
 
+#: The default feature layout, as public names: ports that transform
+#: collected observations feature-by-feature (e.g. CAMBranch's variable
+#: shifting) need to index the columns by meaning, not by position.
+ECOLE_COL_FEATURE_NAMES = _DEFAULT_STATIC_COL + _DEFAULT_DYNAMIC_COL
+ECOLE_ROW_FEATURE_NAMES = _DEFAULT_STATIC_ROW + _DEFAULT_DYNAMIC_ROW
+N_ECOLE_COL_FEATURES = len(ECOLE_COL_FEATURE_NAMES)
+N_ECOLE_ROW_FEATURES = len(ECOLE_ROW_FEATURE_NAMES)
+
 # ---------------------------------------------------------------------------
 # _put — feature assignment helper
 # ---------------------------------------------------------------------------
