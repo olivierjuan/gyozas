@@ -185,7 +185,7 @@ class TestDocumentedProfiles:
         assert "n_step 3, gamma 1" in profile.training["reward"]
         assert "done = no visited child" in profile.training["next_states"]
         # DDQN multi-children targets and the prioritized replay.
-        assert "masked mean" in profile.training["target"]
+        assert "masked sum" in profile.training["target"]
         assert "prioritized" in profile.training["replay"]
         assert "10 gradient steps" in profile.training["replay"]
         # DFS node selection with the heuristics left on.
