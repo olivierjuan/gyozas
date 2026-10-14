@@ -8,6 +8,11 @@ from .branching_state import (
 from .branching_tree import BranchingTreeObservation
 from .meta_observation import MetaObservation
 from .node_bipartite_ecole import NodeBipartiteEcole
+from .node_bipartite_retro import (
+    N_RETRO_FEATURES,
+    RETRO_FEATURE_NAMES,
+    NodeBipartiteRetro,
+)
 from .node_bipartite_scip import NodeBipartiteSCIP
 from .pseudo_cost import Pseudocosts
 from .solver_stats import SolverStats
@@ -29,6 +34,9 @@ __all__ = [
     "NodeBipartite",
     "NodeBipartiteSCIP",
     "NodeBipartiteEcole",
+    "NodeBipartiteRetro",
+    "N_RETRO_FEATURES",
+    "RETRO_FEATURE_NAMES",
     "Pseudocosts",
     "SolverStats",
     "StrongBranchingScores",
