@@ -20,6 +20,7 @@ DOCUMENTED = [
     "dsccl",
     "fmsts",
     "seqbnb",
+    "planbb",
 ]
 
 
@@ -341,6 +342,43 @@ class TestDocumentedProfiles:
         assert "SCIP 7.0.3" in profile.training["scip_protocol"]
         assert "root only" in profile.training["scip_protocol"]
         assert "no restarts" in profile.training["scip_protocol"]
+
+    def test_planbb_declares_its_muzero_regime(self):
+        # PlanB&B (Strang et al., AAAI 2026, arXiv 2511.09219): MuZero-style
+        # model-based RL — a learned model of the B&B tree (h/g/f) searched by
+        # Gumbel MCTS during self-play; at test time the policy head alone.
+        # Same EDF team and SCIP protocol as bbmdp, retro-derived observation.
+        from gyozas.observations import NodeBipartitePlanBB
+
+        profile = get_fidelity_profile("planbb")
+        assert isinstance(profile.observation(), NodeBipartitePlanBB)
+        assert profile.expert is None
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("RL (MuZero-style model-based, Gumbel MCTS)")
+        assert "no expert" in profile.training["regime"]
+        assert "github.com/abfariah/planbb" in profile.training["regime"]
+        # The tree MDP under DFS and its decomposed value.
+        assert "DFS node selection" in profile.training["mdp"]
+        assert "V(s) = sum" in profile.training["mdp"]
+        # The three networks and the SimSiam head.
+        assert "h (representation" in profile.training["architecture"]
+        assert "g (dynamics" in profile.training["architecture"]
+        assert "f (prediction" in profile.training["architecture"]
+        assert "SimSiam" in profile.training["architecture"]
+        # HL-Gauss over log2(-z), the Gumbel MCTS and its test-time shortcut.
+        assert "HL-Gauss" in profile.training["value_head"]
+        assert "log2(-z)" in profile.training["value_head"]
+        assert "Sequential Halving" in profile.training["search"]
+        assert "N=50" in profile.training["search"]
+        assert "N=0" in profile.training["search"]
+        # The four losses and the official defaults.
+        assert "1/(K+1)" in profile.training["loss"]
+        assert "reanalyze off" in profile.training["replay"]
+        assert "1e5 training steps" in profile.training["optimization"]
+        # The bbmdp SCIP protocol: heuristics ON, root cuts, DFS.
+        assert "heuristics ON" in profile.training["scip_protocol"]
+        assert "restartpolicy 'n'" in profile.training["scip_protocol"]
+        assert "depth-first" in profile.training["scip_protocol"]
 
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.

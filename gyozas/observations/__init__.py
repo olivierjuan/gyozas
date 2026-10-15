@@ -20,6 +20,11 @@ from .node_bipartite_retro import (
     NodeBipartiteRetro,
 )
 from .node_bipartite_scip import NodeBipartiteSCIP
+from .planbb import (
+    N_PLANBB_FEATURES,
+    PLANBB_FEATURE_NAMES,
+    NodeBipartitePlanBB,
+)
 from .pseudo_cost import Pseudocosts
 from .solver_stats import SolverStats
 from .strong_branching_scores import StrongBranchingScores
@@ -45,7 +50,9 @@ __all__ = [
     "NodeBipartiteSCIP",
     "NodeBipartiteEcole",
     "NodeBipartiteRetro",
-    "N_RETRO_FEATURES",
+    "NodeBipartitePlanBB",
+    "N_PLANBB_FEATURES",
+    "PLANBB_FEATURE_NAMES",
     "RETRO_FEATURE_NAMES",
     "Pseudocosts",
     "SolverStats",

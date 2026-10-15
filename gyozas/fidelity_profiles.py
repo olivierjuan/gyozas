@@ -1,4 +1,4 @@
-"""The documented native regimes of the fourteen benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the fifteen benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -31,6 +31,7 @@ from .observations import (
     BranchingStateObservation,
     MetaObservation,
     NodeBipartite,
+    NodeBipartitePlanBB,
     NodeBipartiteRetro,
     StrongBranchingScores,
 )
@@ -217,6 +218,23 @@ def register_documented_profiles() -> list[str]:
                 "validation": "every 100 episodes: 20 validation instances greedy, gmean n_nodes, best checkpoint kept",
                 "instances": "set covering 500x1000, 10k training instances cycled",
                 "scip_protocol": "SCIP 8.0.3 (ecole 0.7.3): heuristics ON (default), separating/maxrounds 0, restarts off (restartpolicy 'n'), depth-first node selection (nodeselection/dfs stdpriority = memsavepriority = 300000); 3600 s limit",
+            },
+        ),
+        FidelityProfile(
+            name="planbb",
+            observation=lambda: NodeBipartitePlanBB(),
+            training={
+                "regime": "RL (MuZero-style model-based, Gumbel MCTS) from scratch — no expert, learned model of the B&B tree (Strang, Alès, Bissuel, Juan, Kedad-Sidhoum & Rachelson, arXiv 2511.09219, AAAI 2026; official repo github.com/abfariah/planbb)",
+                "mdp": "tree MDP under DFS node selection (fixed policy ρ): state = B&B tree + incumbent, action = branching variable at the deepest open node, reward -1 per step, gamma 1; the value decomposes as V(s) = sum of per-open-node values, so the model never needs to predict across node-selection choices",
+                "features": "43 variable features (19 bipartite-LP + 24 planbb global/focus-node features replicated per variable, single is_best_sibling flag + constant branchability slot), 5 constraint features, edge features on",
+                "architecture": "three networks: h (representation — LayerNorm+MLP var/constraint encoders, residual bipartite convolutions into a latent graph), g (dynamics — the left/right latent children via an action embedding + residual bipartite convolutions, no reward prediction), f (prediction — per-variable policy logits, 18-bin HL-Gauss value, 2-way branchability); SimSiam consistency head (projection 64->16, predictor 16->16)",
+                "value_head": "HL-Gauss classification over psi(z) = log2(-z) for negative node counts z (18 bins, sigma_G 0.75 bin widths), decoded as -2^E[bin centers]",
+                "search": "Gumbel MCTS: Sequential Halving at the root over Gumbel-Top-k sampled actions (N=50 simulations, num_top_actions 50 — all candidates stay in the first phase, so every root action is visited once, c_visit 50, c_scale 0.1), backup g^k = g + logits + sigma(Q-tilde); the improved root policy pi' = softmax(P + (c_visit + max N) * c_scale * Q-tilde); at test time the policy head alone (N=0) is the headline result",
+                "loss": "policy CE against the search visit distribution + tree-MDP HL-Gauss value loss (per open node, td_steps 3) + branchability CE (target obs_mask) + SimSiam cosine consistency — all coefficients 1, gradients scaled 1/(K+1) with K=3 unroll steps",
+                "replay": "self-play trajectories of unrolled ghost states, buffer 40k transitions filled before learning / 50k capacity; the released training script turns prioritized replay on with max priorities and runs 16 parallel MCTS environments, the argparse defaults are uniform replay and 4 (reanalyze off in both)",
+                "optimization": "Adam lr 1e-3 decayed to 1e-5 (x0.95 every 1k steps), batch 64 (the config's 96 with 4 self-play workers), 1e5 training steps",
+                "instances": "set covering (the official SC filter keeps instances the default brancher solves in 3..5100 nodes)",
+                "scip_protocol": "SCIP 8 (ecole): heuristics ON (default), separating/maxrounds 0 (root cuts only), restarts off (restartpolicy 'n'), depth-first node selection (nodeselection/dfs stdpriority = memsavepriority = 300000) — the bbmdp protocol; node limit 10k, 3600 s limit (training-side like every ported method; the benchmark evaluation keeps the default solver profile)",
             },
         ),
         FidelityProfile(

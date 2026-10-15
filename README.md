@@ -116,6 +116,7 @@ See the full [migration guide](https://olivierjuan.github.io/gyozas/migrating-fr
 - `NodeBipartite` / `NodeBipartiteEcole` -- pure-Python bipartite graph with configurable features
 - `NodeBipartiteSCIP` -- thin wrapper around PySCIPOpt's built-in C implementation
 - `NodeBipartiteRetro` -- the bipartite graph plus the 24 retrospective features of Parsonson (2022)
+- `NodeBipartitePlanBB` -- the retro observation with PlanB&B's deviations (single `is_best_sibling` flag, constant `branchability` slot), 43 variable features
 - `BranchingStateObservation` -- the solver-stats triple (25+8+53) of Zarpellon (2021), reused by T-BranT and TGPPO
 - `MetaObservation` -- stack observations (e.g. bipartite graph + branching state)
 - `Pseudocosts` -- per-variable pseudocost scores accumulated across branching history
@@ -128,7 +129,7 @@ Branching experts for expert-driven data collection (imitation learning), all sh
 - `PseudocostExpert` -- Ecole-style locally-observed pseudocosts
 
 ### Fidelity Profiles
-Each learn2branch paper's regime — observation, expert, augmentation grid, training metadata — is registered as an activable `FidelityProfile` (`gyozas.fidelity_profiles` defines them, `gyozas.fidelity` manages the registry): gasse, lookback, treegate, tbrant, mamba, tgppo, retrobranching, scavuzzo, sorrel, bbmdp, cambranch, dsccl, fmsts, seqbnb, plus the `gasse-relpscost` control arm (Gasse's protocol with the scalable expert, for pricing the expert switch). `register_fidelity_profile` / `get_fidelity_profile` / `available_fidelity_profiles` manage the registry.
+Each learn2branch paper's regime — observation, expert, augmentation grid, training metadata — is registered as an activable `FidelityProfile` (`gyozas.fidelity_profiles` defines them, `gyozas.fidelity` manages the registry): gasse, lookback, treegate, tbrant, mamba, tgppo, retrobranching, scavuzzo, sorrel, bbmdp, planbb, cambranch, dsccl, fmsts, seqbnb, plus the `gasse-relpscost` control arm (Gasse's protocol with the scalable expert, for pricing the expert switch). `register_fidelity_profile` / `get_fidelity_profile` / `available_fidelity_profiles` manage the registry.
 
 ### Benchmark Runner & Metrics
 - `Runner` / `ExperimentConfig` / `Cell` / `Method` -- config-driven grids (method × strate × split × seed), records on disk, restartable (a re-run skips completed cells)
