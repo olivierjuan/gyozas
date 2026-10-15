@@ -76,13 +76,21 @@ class RelpscostExpert:
         pass
 
     def select(self, model: Model, action_set: NDArray[np.int64]) -> int | None:
+        return _argmax_action(self.scores(model), action_set)
+
+    def scores(self, model: Model) -> dict[int, float]:
+        """SCIP's per-candidate pseudocost score, keyed by LP column position.
+
+        The full label vector behind :meth:`select` — an imitation-learning
+        collector records it as the expert's scores (R6.4: the GCNN trained
+        on these labels prices the switch to the scalable expert).
+        """
         cands, lp_vals, _, n_cands, _, _ = model.getLPBranchCands()
         cands, lp_vals = cands[:n_cands], lp_vals[:n_cands]
-        scores = {
+        return {
             int(var.getCol().getLPPos()): model.getVarPseudocostScore(var, val)
             for var, val in zip(cands, lp_vals, strict=False)
         }
-        return _argmax_action(scores, action_set)
 
 
 class StrongBranchingExpert:

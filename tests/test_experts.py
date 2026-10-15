@@ -59,3 +59,34 @@ class TestExperts:
         if done:
             pytest.skip("Instance solved during presolve")
         assert env.expert.select(env.model, action_set) == env.expert.select(env.model, action_set)
+
+
+class TestRelpscostScores:
+    def test_scores_keyed_by_lp_position_and_select_is_their_argmax(self):
+        """``RelpscostExpert.scores`` exposes the full label vector behind
+        ``select`` (R6.4's collector records it as the expert's scores)."""
+        env = Environment(
+            instance_generator=FileGenerator(directory="tests", pattern="*.lp"),
+            scip_params={"display/verblevel": 0, "limits/nodes": 50},
+        )
+        env.expert = RelpscostExpert()
+        try:
+            obs, action_set, _reward, done, _info = env.reset()
+            if done:
+                pytest.skip("Instance solved during presolve")
+            scores = env.expert.scores(env.model)
+            assert scores  # the LP has branching candidates
+            assert all(
+                isinstance(position, int) and position >= 0 for position in scores
+            )
+            assert all(value == value for value in scores.values())  # no NaN
+            action = env.expert.select(env.model, action_set)
+            if action is not None:
+                # select picks the action-set candidate with the best score.
+                in_set = {int(a): scores.get(int(a)) for a in action_set}
+                assert in_set[action] is not None
+                assert in_set[action] == max(
+                    v for v in in_set.values() if v is not None
+                )
+        finally:
+            env.close()
