@@ -353,4 +353,22 @@ class TestDocumentedProfiles:
         assert "SCIP 7.0.3" in get_fidelity_profile("seqbnb").training["scip_protocol"]
 
     def test_documented_profiles_can_be_reregistered(self):
-        assert register_documented_profiles() == DOCUMENTED
+        names = register_documented_profiles()
+        assert set(DOCUMENTED) <= set(names)  # every documented profile
+        assert "gasse-relpscost" in names  # plus R6.4's control arm
+
+
+class TestGasseRelpscostControl:
+    def test_declares_gasse_regime_with_the_scalable_expert(self):
+        """R6.4's control arm: Gasse's bipartite-LP regime and GCNN, with
+        the relpscost expert instead of strong branching."""
+        profile = get_fidelity_profile("gasse-relpscost")
+        assert isinstance(profile.expert(), RelpscostExpert)
+        assert profile.observation is not None  # the NodeBipartite regime
+        assert profile.training["regime"] == "bipartite-LP"
+        assert "R6.4" in profile.training["note"]
+        gasse = get_fidelity_profile("gasse")
+        # Same regime and architecture — the expert is the only lever.
+        assert gasse.training["regime"] == profile.training["regime"]
+        assert gasse.training["architecture"] == profile.training["architecture"]
+        assert not isinstance(gasse.expert(), RelpscostExpert)

@@ -67,6 +67,19 @@ def register_documented_profiles() -> list[str]:
             expert=lambda: StrongBranchingExpert(),
             training=dict(_GASSE_TRAINING),
         ),
+        # R6.4's control arm — not a published regime: Gasse's protocol and
+        # GCNN, with the scalable expert swapped in for strong branching. Run
+        # against the gasse profile on the synthetics, it prices the cost of
+        # the switch to the scalable expert.
+        FidelityProfile(
+            name="gasse-relpscost",
+            observation=lambda: NodeBipartite(),
+            expert=lambda: RelpscostExpert(),
+            training={
+                **_GASSE_TRAINING,
+                "note": "not a published regime — R6.4's control arm against the gasse profile (Gasse's collection protocol and GCNN, relpscost labels): the pair measures the cost of switching to the scalable expert on the synthetics",
+            },
+        ),
         FidelityProfile(
             name="lookback",
             observation=lambda: NodeBipartite(),
