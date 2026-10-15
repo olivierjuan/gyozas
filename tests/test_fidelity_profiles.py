@@ -169,7 +169,7 @@ class TestDocumentedProfiles:
         assert "restarts off" in profile.training["scip_protocol"]
 
     def test_bbmdp_declares_its_corrected_vanilla_mdp_regime(self):
-        # BBMDP 2025 (Forel et al., NeurIPS 2025): the Tree MDP corrected into
+        # BBMDP (Strang et al., arXiv 2510.19348): the Tree MDP corrected into
         # a vanilla MDP over the visited nodes (Prop. 3.1) — k-step returns
         # recomputed retrospectively, DQN with an HL-Gauss value head, DFS node
         # selection, heuristics ON. The 43-feature observation is recharged
