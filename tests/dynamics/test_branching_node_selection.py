@@ -107,6 +107,26 @@ class TestJointEpisode:
         assert (decision.actions > 0).all()  # node numbers
         dynamics.close()
 
+    def test_nodesel_rule_exposes_the_open_node_objects(self):
+        # The joint-regime policies read node tokens (depth, bounds, ancestor
+        # branchings) at the pause; the rule keeps the Node objects that back
+        # the action set's numbers.
+        dynamics = BranchingNodeSelectionDynamics()
+        generator = SetCoverGenerator(rng=np.random.default_rng(7))
+        model = generator.generate_instance(n_rows=120, n_cols=150, density=0.10)
+        model.hideOutput()
+        _done, decision = dynamics.reset(model)
+        nodes = dynamics.nodesel_rule.nodes
+        assert nodes is not None and len(nodes) == len(decision)
+        assert [node.getNumber() for node in nodes] == decision.actions.tolist()
+        assert all(node.getDepth() == 0 for node in nodes)  # the root
+        assert decision.actions[0] in decision
+        done, _ = dynamics.step(int(decision.actions[0]))
+        # A fresh node-selection decision refreshes the objects.
+        if not done and dynamics.pending == DecisionKind.NODE_SELECTION:
+            assert dynamics.nodesel_rule.nodes is not None
+        dynamics.close()
+
     def test_joint_control_solves_optimal_with_both_decisions(self):
         # A branching instance: the policy drives BOTH the node selection
         # (always the first open node) and the branching (middle candidate).

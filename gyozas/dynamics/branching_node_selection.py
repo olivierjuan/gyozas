@@ -85,6 +85,7 @@ class _JointNodesel(Nodesel):
         self.die_event = die_event
         self.dynamics = dynamics
         self.obs: NDArray[np.int64] | None = None
+        self.nodes: list | None = None
         self.action = None
         self.count = 0
         self.empty_calls = 0
@@ -104,6 +105,11 @@ class _JointNodesel(Nodesel):
         self.count += 1
         self.dynamics.counters.nodes_selected += 1
         self.obs = np.array([node.getNumber() for node in nodes], dtype=np.int64)
+        # The Node objects themselves, for the main thread to read at the
+        # pause (getters, depth, ancestor branchings — the joint-regime
+        # policies' node tokens). The numbers above stay the action set; the
+        # objects are read-only state, never actions.
+        self.nodes = list(nodes)
         self.dynamics._pause(DecisionKind.NODE_SELECTION)
         while not self.action_event.wait(timeout=1.0):
             if self.die_event.is_set():
@@ -340,6 +346,7 @@ class BranchingNodeSelectionDynamics(ThreadedDynamics):
         if hasattr(self, "nodesel_rule"):
             self.nodesel_rule.scip = None  # ty: ignore[invalid-assignment]
             self.nodesel_rule.model = None
+            self.nodesel_rule.nodes = None  # drop the Node references too
         if hasattr(self, "branch_rule"):
             self.branch_rule.scip = None  # ty: ignore[invalid-assignment]
             self.branch_rule.model = None
