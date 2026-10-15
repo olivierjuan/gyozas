@@ -1,4 +1,4 @@
-"""The documented native regimes of the thirteen benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the fourteen benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -266,6 +266,23 @@ def register_documented_profiles() -> list[str]:
                 "instances": "2 EDF industrial problems: P1 microgrid energy management (186 constraints, 120 variables, 54 binary), P2 hydroelectric valley (282 constraints, 207 variables, 96 binary); 200 training / 500 test instances per run, 100 cross-validated runs",
                 "scip_protocol": "CPLEX 12.7.1 under DFS with all presolving and cutting turned off (harness: SCIP with the same protocol, training-side only like every RL method; the benchmark evaluation keeps the default solver profile)",
                 "native_strate": "EDF industrial",
+            },
+        ),
+        FidelityProfile(
+            name="seqbnb",
+            training={
+                "regime": "IL (DAgger) over a typed token sequence — joint branching AND node selection, one policy for both solver decisions",
+                "note": "arXiv 2610.14835, no official repository (the paper promises the code upon publication) — ported from the paper",
+                "dynamics": "the policy controls both decisions in one episode (harness: BranchingNodeSelectionDynamics, a Method-declared dynamics): which open node to process next and which variable to branch on at that node, interleaved arbitrarily — a selected node can be fathomed without ever asking for a branching",
+                "tokens": "typed trajectory sequence: node tokens [LP lower bound l(u), estimate c(u), depth d(u), visited / fathomed / incumbent flags, creation order s(u), global gap g_t] for every open node — always retained; node-selection action tokens [g_t, |O_t|, step t, the candidate node's depth, lower bound, estimate, a pooled graph summary]; branching action tokens [the same plus the selected variable's bipartite embedding]; the window keeps the last L_max = 500 tokens beyond the open nodes",
+                "architecture": "token embedding = type embedding + type-specific MLP; self-attention encoder over the token window; Gasse's bipartite GCNN encodes the current node's LP; branching head = cross-attention (the variable embeddings query the token sequence) then MLP([h_var; h_var_tilde]), argmax; node-selection head = MLP_ns over the node tokens' contextual representations, argmax over the open nodes",
+                "expert": "branching labels = strong branching; node-selection oracle = the offline reference optimum x* of the training instance: among the compatible open nodes (every branching bound L_j(u) <= x*_j <= U_j(u)) the lexicographic min of (-depth, lower bound, estimate, order) — deepest compatible first; fallback when none is compatible: lexicographic min of (lower bound, estimate, -depth, order)",
+                "loss": "L = L_branch + lambda L_ns with lambda = 0.1 — cross-entropy over the candidate set for each head, jointly",
+                "dagger": "10k expert-driven samples, then 11 rounds of ~10k policy-driven samples relabeled by the experts (120k total)",
+                "optimization": "Adam lr 1e-5, batch 64",
+                "instances": "4 Ecole families (set covering 1000 bin / 500 cons, combinatorial auction, facility location, maximum independent set); shifted geometric means of node counts and solving time",
+                "scip_protocol": "SCIP 7.0.3, cut generation at the root only, no restarts (training-side like every ported method; the benchmark evaluation keeps the default solver profile)",
+                "native_strate": "ecole synthetics",
             },
         ),
     ]

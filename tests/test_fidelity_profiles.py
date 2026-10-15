@@ -19,6 +19,7 @@ DOCUMENTED = [
     "cambranch",
     "dsccl",
     "fmsts",
+    "seqbnb",
 ]
 
 
@@ -300,6 +301,47 @@ class TestDocumentedProfiles:
         # CPLEX under DFS, everything off — training-side only.
         assert "CPLEX 12.7.1 under DFS" in profile.training["scip_protocol"]
 
+    def test_seqbnb_declares_its_joint_branching_and_node_selection_regime(self):
+        # Seq-BnB 2026 (Liu, Liu, Yan, Shi & Zhao, arXiv 2610.14835): one
+        # policy for BOTH solver decisions, learned by DAgger over a typed
+        # token sequence. No official repository (code promised upon
+        # publication).
+        profile = get_fidelity_profile("seqbnb")
+        assert profile.observation is None
+        assert profile.expert is None
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("IL (DAgger)")
+        assert "joint branching AND node selection" in profile.training["regime"]
+        assert "no official repository" in profile.training["note"]
+        # The joint regime runs on the method-declared dynamics.
+        assert "BranchingNodeSelectionDynamics" in profile.training["dynamics"]
+        assert "interleaved arbitrarily" in profile.training["dynamics"]
+        # Typed tokens: node tokens always retained, both action-token kinds.
+        assert "node tokens" in profile.training["tokens"]
+        assert "always retained" in profile.training["tokens"]
+        assert "L_max = 500" in profile.training["tokens"]
+        assert "node-selection action tokens" in profile.training["tokens"]
+        assert "branching action tokens" in profile.training["tokens"]
+        # Self-attention over the sequence + the bipartite GCNN + the two heads.
+        assert "self-attention encoder" in profile.training["architecture"]
+        assert "bipartite GCNN" in profile.training["architecture"]
+        assert "cross-attention" in profile.training["architecture"]
+        assert "argmax over the open nodes" in profile.training["architecture"]
+        # Both experts: strong branching for branching, the reference optimum
+        # for node selection (deepest compatible first).
+        assert "strong branching" in profile.training["expert"]
+        assert "reference optimum x*" in profile.training["expert"]
+        assert "deepest compatible first" in profile.training["expert"]
+        # The joint loss and DAgger rounds.
+        assert "lambda = 0.1" in profile.training["loss"]
+        assert "10k expert-driven samples" in profile.training["dagger"]
+        assert "120k total" in profile.training["dagger"]
+        assert "Adam lr 1e-5" in profile.training["optimization"]
+        assert profile.training["native_strate"] == "ecole synthetics"
+        assert "SCIP 7.0.3" in profile.training["scip_protocol"]
+        assert "root only" in profile.training["scip_protocol"]
+        assert "no restarts" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo", "sorrel"):
@@ -308,6 +350,7 @@ class TestDocumentedProfiles:
         assert "8.0.3" in get_fidelity_profile("bbmdp").training["scip_protocol"]
         assert "SCIP 7.0.1" in get_fidelity_profile("dsccl").training["scip_protocol"]
         assert "CPLEX 12.7.1" in get_fidelity_profile("fmsts").training["scip_protocol"]
+        assert "SCIP 7.0.3" in get_fidelity_profile("seqbnb").training["scip_protocol"]
 
     def test_documented_profiles_can_be_reregistered(self):
         assert register_documented_profiles() == DOCUMENTED
