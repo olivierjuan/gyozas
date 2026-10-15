@@ -254,7 +254,7 @@ def register_documented_profiles() -> list[str]:
             name="fmsts",
             training={
                 "regime": "RL (approximate Q-learning) from scratch — no expert: the MDP is deterministic, so the Q-values are observable and the temporal-difference loss reduces to the plain MSE against them (Eq 3)",
-                "note": "arXiv 2005.10026, no official repository — ported from the paper",
+                "note": "arXiv 2005.10026, no official repository — ported from the paper; a partial internal implementation (gitlab.pleiade.edf.fr/AO/grindexp: the Etheve-style subtree-size terminal reward inside a retro-branching DQN fork) cross-confirms the two fidelity pillars: DFS node selection (with restartdfs explicitly disabled) and subtree-size value targets",
                 "value_function": "the subtree size: under DFS node selection, minimising every subtree is optimal for the whole tree size (Prop 2; Prop 1 shows it fails under other node selections); Q(s, a) = 1 + V(child0) + V(child1), observed by counting the nodes once the tree is fully expanded",
                 "loss": "Eq 5: the MSE against the observed Q-values, weighted by 1/V(tree) so that every instance weighs equally in the expectation over the instance distribution",
                 "replay": "prioritized experience replay with the sampling probability proportional to the error normalised by its target, |Q - Q_hat|/Q (Eq 6)",
