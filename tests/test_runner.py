@@ -3,8 +3,10 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+from gyozas.dynamics import BranchingNodeSelectionDynamics
 from gyozas.experts import RelpscostExpert
 from gyozas.fidelity import FidelityProfile, get_fidelity_profile, register_fidelity_profile
 from gyozas.policy import CallablePolicy
@@ -31,6 +33,23 @@ def micro_strate(tmp_path: Path) -> Path:
     for name in ("tiny_a", "tiny_b"):
         (split / f"{name}.lp").write_text(MICRO_LP)
     build_strate(root, provenance={"source": "synthetic micro test strate"})
+    return root
+
+
+@pytest.fixture
+def branching_strate(tmp_path: Path) -> Path:
+    """A strate of set covers that need branching decisions (the micro LP
+    closes at the root: its LP bound already equals an incumbent)."""
+    from gyozas.instances import SetCoverGenerator
+
+    root = tmp_path / "data" / "branching"
+    split = root / "train"
+    split.mkdir(parents=True)
+    generator = SetCoverGenerator(rng=np.random.default_rng(3))
+    for i in range(4):
+        model = generator.generate_instance(n_rows=200, n_cols=250, density=0.10)
+        model.writeProblem(filename=str(split / f"sc_{i}.lp"))
+    build_strate(root, provenance={"source": "synthetic branching test strate"})
     return root
 
 
@@ -245,3 +264,65 @@ class TestFidelityProfiles:
     def test_unknown_fidelity_profile_is_rejected(self):
         with pytest.raises(KeyError, match="nope"):
             get_fidelity_profile("nope")
+
+
+class TestMethodDynamics:
+    """A method may declare its own dynamics (the joint regime, R5.4-adjacent)."""
+
+    def test_method_dynamics_and_attach_run_the_joint_regime(self, tmp_path, branching_strate):
+        """A Method with ``dynamics`` runs its episodes on it, and its policy
+        receives the Environment through ``attach`` — the hook a joint-regime
+        policy needs to read the model and the dynamics' bookkeeping."""
+
+        class RecordingJointPolicy:
+            def __init__(self):
+                self.env = None
+                self.kinds = []
+
+            def attach(self, env):
+                self.env = env
+
+            def select_action(self, obs, action_set):
+                self.kinds.append(action_set.kind)
+                return int(action_set.actions[0])
+
+        policy = RecordingJointPolicy()
+        config = ExperimentConfig(
+            cells=[
+                Cell(
+                    method="j",
+                    strate="branching",
+                    split="train",
+                    seeds=[0],
+                    profile="default",
+                    budget={"limits/nodes": 20, "display/verblevel": 0},
+                )
+            ]
+        )
+        runner = Runner(
+            config,
+            {
+                "j": Method(
+                    name="j",
+                    policy=lambda: policy,
+                    dynamics=lambda: BranchingNodeSelectionDynamics(),
+                )
+            },
+            {"branching": branching_strate},
+            tmp_path / "results-joint",
+        )
+        report = runner.run()
+        assert report["j/branching/train"]["executed"] == 4
+        record = json.loads(next((tmp_path / "results-joint").rglob("sc_0.json")).read_text())
+        assert record["complete"] is True
+        assert record["result"]["solved"] is True
+        # The policy drove both decision kinds, node selection first, and was
+        # attached to the episode's environment.
+        assert policy.env is not None
+        kinds = [kind.name for kind in policy.kinds]
+        assert kinds[0] == "NODE_SELECTION"
+        assert "BRANCHING" in kinds
+        # The recorded counters are the joint regime's own.
+        counters = record["result"]["counters"]
+        assert counters["nodes_selected"] >= 1
+        assert counters["decisions"] == counters["nodes"]

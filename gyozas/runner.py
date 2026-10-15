@@ -80,6 +80,11 @@ class Method:
         be ``None`` when a fidelity profile with an expert is declared — the
         expert then drives the solver — or for the default-solver baseline
         (R6.1), where every decision is handed back to SCIP's own rule.
+        A policy exposing an ``attach(env)`` method receives the run's
+        :class:`~gyozas.environment.Environment` before the first reset —
+        the hook a joint-regime policy needs to read the model and the
+        dynamics' bookkeeping (the plain ``(obs, action_set)`` protocol
+        carries neither).
     observation:
         Factory returning the observation function the policy consumes, or
         ``None`` for the default (solver-stats-free) observation.
@@ -89,6 +94,14 @@ class Method:
         Optional name of a registered :class:`~gyozas.fidelity.FidelityProfile`
         (R5.4): the method's native regime — observation, expert, augmentation,
         solver parameters — is recharged for the run.
+    dynamics:
+        Factory returning the dynamics the method's episodes run on, or
+        ``None`` for the default :class:`~gyozas.dynamics.BranchingDynamics`
+        (with the fidelity profile's augmentation and the expert/baseline
+        extra actions). A method controlling more than the variable
+        branching — the joint branch-and-node-selection regime — declares
+        its own; its action sets are the dynamics' own decision objects, so
+        the policy is the component that must understand them.
     """
 
     name: str
@@ -96,6 +109,7 @@ class Method:
     observation: Callable[[], Any] | None = None
     config: dict[str, Any] = field(default_factory=dict)
     fidelity: str | None = None
+    dynamics: Callable[[], Any] | None = None
 
 
 @dataclass
@@ -292,7 +306,11 @@ class Runner:
     def _policy_for(self, method: Method, env: Environment, expert: Any | None) -> Callable[[Any, Any], int]:
         """Resolve the method's decision function for one episode."""
         if method.policy is not None:
-            return method.policy().select_action
+            policy = method.policy()
+            attach = getattr(policy, "attach", None)
+            if attach is not None:
+                attach(env)
+            return policy.select_action
         if expert is not None:
 
             def decide(_obs, action_set):
@@ -326,13 +344,22 @@ class Runner:
         triplet = SeedTriplet.from_base_seed(seed)
         triplet.seed_python()
         generator = FileGenerator(directory=path.parent, pattern=path.name, sampling_mode="replace", rng=triplet.python)
+        if method.dynamics is not None:
+            # The method's own dynamics (the joint branch-and-node-selection
+            # regime): its action sets are its decision objects, so the
+            # augmentation and extra actions of the branching default do not
+            # apply — the declared policy is the component that understands
+            # its protocol.
+            dynamics = method.dynamics()
+        else:
+            dynamics = BranchingDynamics(augmentation=augmentation, with_extra_actions=extra_actions)
         env = Environment(
             instance_generator=generator,
             observation_function=observation,
             reward_function=self.reward_factory() if self.reward_factory else None,
             information_function=SolveStatus(),
             scip_params=self._scip_params(cell, method),
-            dynamics=BranchingDynamics(augmentation=augmentation, with_extra_actions=extra_actions),
+            dynamics=dynamics,
         )
         try:
             env.seed(triplet.solver)
