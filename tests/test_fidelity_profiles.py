@@ -18,6 +18,7 @@ DOCUMENTED = [
     "bbmdp",
     "cambranch",
     "dsccl",
+    "fmsts",
 ]
 
 
@@ -255,6 +256,50 @@ class TestDocumentedProfiles:
         # SCIP 7.0.1, 1 h limit.
         assert "SCIP 7.0.1" in profile.training["scip_protocol"]
 
+    def test_fmsts_declares_its_subtree_size_rl_regime(self):
+        # FMSTS 2020 (Etheve, Alès, Bissuel, Juan & Kedad-Sidhoum, arXiv
+        # 2005.10026): RL from scratch with observable Q-values — the MDP is
+        # deterministic, so the TD loss is the plain MSE against the observed
+        # subtree sizes. The value function counts nodes; the architecture is
+        # multiplicative-dueling; the observation is bespoke (a fitted PCA).
+        # No official code.
+        profile = get_fidelity_profile("fmsts")
+        assert profile.observation is None
+        assert profile.expert is None
+        assert profile.scip_params == {}
+        assert profile.training["regime"].startswith("RL (approximate Q-learning) from scratch")
+        assert "no official repository" in profile.training["note"]
+        # The subtree-size value function and its optimality under DFS.
+        assert "subtree size" in profile.training["value_function"]
+        assert "Prop 2" in profile.training["value_function"]
+        assert "Prop 1" in profile.training["value_function"]
+        assert "Q(s, a) = 1 + V(child0) + V(child1)" in profile.training["value_function"]
+        # Eq 5: the MSE weighted so every instance weighs equally.
+        assert "weighted by 1/V(tree)" in profile.training["loss"]
+        # Eq 6: PER on the error normalised by its target.
+        assert "|Q - Q_hat|/Q (Eq 6)" in profile.training["replay"]
+        assert "epsilon-greedy" in profile.training["exploration"]
+        # The bespoke observation: PCA statics, depth/distance/one-hot dynamics.
+        assert "bespoke" in profile.training["observation"]
+        assert "PCA of the concatenated (A, b, c)" in profile.training["observation"]
+        assert "3|J| one-hot branching state" in profile.training["observation"]
+        assert "fitted PCA is part of the checkpoint" in profile.training["observation"]
+        # A = J in the paper; the harness offers the LP candidates.
+        assert "the harness offers the LP branching candidates" in profile.training["action_space"]
+        # MDA: the multiplicative dueling architecture.
+        assert "MDA (Multiplicative Dueling Architecture)" in profile.training["architecture"]
+        assert "linear-activation" in profile.training["architecture"]
+        # One update per iteration (Algorithm 1); the rest are pilot choices.
+        assert "one loss-(Eq 5) update per iteration" in profile.training["optimization"]
+        assert "not specified" in profile.training["optimization"]
+        # Two EDF industrial problems, 200 train / 500 test.
+        assert "P1 microgrid" in profile.training["instances"]
+        assert "P2 hydroelectric valley" in profile.training["instances"]
+        assert "200 training / 500 test" in profile.training["instances"]
+        assert profile.training["native_strate"] == "EDF industrial"
+        # CPLEX under DFS, everything off — training-side only.
+        assert "CPLEX 12.7.1 under DFS" in profile.training["scip_protocol"]
+
     def test_documented_scip_protocols_are_recorded_where_the_paper_has_one(self):
         # The RL papers (RetroBranching, Scavuzzo) leave the SCIP column open in the spec.
         for name in ("gasse", "lookback", "treegate", "tbrant", "mamba", "tgppo", "sorrel"):
@@ -262,6 +307,7 @@ class TestDocumentedProfiles:
             assert "6.0.1" in profile.training["scip_protocol"] or "8.0.4" in profile.training["scip_protocol"]
         assert "8.0.3" in get_fidelity_profile("bbmdp").training["scip_protocol"]
         assert "SCIP 7.0.1" in get_fidelity_profile("dsccl").training["scip_protocol"]
+        assert "CPLEX 12.7.1" in get_fidelity_profile("fmsts").training["scip_protocol"]
 
     def test_documented_profiles_can_be_reregistered(self):
         assert register_documented_profiles() == DOCUMENTED

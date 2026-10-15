@@ -1,4 +1,4 @@
-"""The documented native regimes of the twelve benchmark methods (R5.4, spec §3).
+"""The documented native regimes of the thirteen benchmark methods (R5.4, spec §3).
 
 Each :class:`~gyozas.fidelity.FidelityProfile` below restates its method's
 checklist item from the benchmark specification (§3 « Ce que chaque méthode
@@ -248,6 +248,24 @@ def register_documented_profiles() -> list[str]:
                 "instances": "4 Ecole families; train on the Easy level (100k samples), test 100 instances x 3 difficulty levels per family",
                 "scip_protocol": "SCIP 7.0.1, 3600 s limit",
                 "native_strate": "ecole synthetics",
+            },
+        ),
+        FidelityProfile(
+            name="fmsts",
+            training={
+                "regime": "RL (approximate Q-learning) from scratch — no expert: the MDP is deterministic, so the Q-values are observable and the temporal-difference loss reduces to the plain MSE against them (Eq 3)",
+                "note": "arXiv 2005.10026, no official repository — ported from the paper",
+                "value_function": "the subtree size: under DFS node selection, minimising every subtree is optimal for the whole tree size (Prop 2; Prop 1 shows it fails under other node selections); Q(s, a) = 1 + V(child0) + V(child1), observed by counting the nodes once the tree is fully expanded",
+                "loss": "Eq 5: the MSE against the observed Q-values, weighted by 1/V(tree) so that every instance weighs equally in the expectation over the instance distribution",
+                "replay": "prioritized experience replay with the sampling probability proportional to the error normalised by its target, |Q - Q_hat|/Q (Eq 6)",
+                "exploration": "epsilon-greedy, as in DQN (no schedule given in the paper)",
+                "observation": "bespoke, supplied by the method (the fitted PCA is part of the checkpoint): static — a PCA of the concatenated (A, b, c) instance vector; dynamic — the node depth, the primal solution's distance to the bounds, and the 3|J| one-hot branching state (set to 0 / set to 1 / free along the ancestry)",
+                "action_space": "the paper branches on every binary variable (A = J); the harness offers the LP branching candidates — a documented deviation, shared with every ported RL method",
+                "architecture": "MDA (Multiplicative Dueling Architecture): the elementwise product of a 1-D linear-activation output of a dense block fed with the static features only, and a |J|-D output of a dense block fed with the static and dynamic features — the multiplicative form tracks the Q-function's exponential scale variation between depths and instances",
+                "optimization": "one loss-(Eq 5) update per iteration over a batch drawn from the buffer (Algorithm 1); the optimizer, batch size and buffer size are not specified — pilot choices",
+                "instances": "2 EDF industrial problems: P1 microgrid energy management (186 constraints, 120 variables, 54 binary), P2 hydroelectric valley (282 constraints, 207 variables, 96 binary); 200 training / 500 test instances per run, 100 cross-validated runs",
+                "scip_protocol": "CPLEX 12.7.1 under DFS with all presolving and cutting turned off (harness: SCIP with the same protocol, training-side only like every RL method; the benchmark evaluation keeps the default solver profile)",
+                "native_strate": "EDF industrial",
             },
         ),
     ]
